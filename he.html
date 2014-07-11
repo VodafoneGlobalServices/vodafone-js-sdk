@@ -6,18 +6,15 @@
     <script src="he.js"></script>
 
     <script>
-        var he = new HE(
-                'https://cors-test.appspot.com/test',
-                'content-type',
-                'https://cors-test.appspot.com/test'
-        );
+        function handleResolvedUserData(data) {
+            console.log(data);
+        }
 
-//        var he = new HE(
-//                'http://p.preprod.addressbook.vodafone.com/kaching',
-//                'x-up-calling-line-id',
-//                'http://kaching.incubation.vodafone.com/msisdn'
-//        );
-        he.callHeBackend();
+        var he = HE.init({
+            resolveUserUrl: 'http://127.0.0.1:5000/users/resolve/'
+        });
+
+        he.getUserDetail(handleResolvedUserData);
     </script>
 </head>
 <body>

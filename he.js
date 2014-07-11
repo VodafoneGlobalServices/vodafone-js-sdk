@@ -1,45 +1,23 @@
-/**
- * Header enrichment javascript SDK.
- * Include this script only if the user is not logged in in your application backend.
- *
- * @param heUrl - URL of a server with working header enrichment
- * @param msisdnHeader - name of the header containing the MSISDN
- * @param callbackUrl - URL of the application backend to  notify (sends a JSON with MSISDN)
- * @constructor
- */
-function HE(heUrl, msisdnHeader, callbackUrl) {
-    this.heUrl = heUrl;
-    this.msisdnHeader = msisdnHeader;
-    this.callbackUrl = callbackUrl;
-}
+var HE = {
+    options: {
+        resolveUserUrl: 'he.incubation.vodafone.com/users/resolve'
+    },
 
-HE.prototype.callHeBackend = function() {
-    var _this = this;
-
-    $.ajax({
-        type: 'GET',
-        url: this.heUrl,
-        success: function(data, textStatus, request){
-            _this.notifyAppBackend(data, textStatus, request);
+    init: function (options) {
+        for (var key in options) {
+            this.options[key] = options[key];
         }
-    });
-}
 
-HE.prototype.notifyAppBackend = function(data, textStatus, request) {
-    var msisdn = request.getResponseHeader(this.msisdnHeader);
+        return this;
+    },
 
-    if (msisdn) {
-        console.log('Retrieved MSISDN ' + msisdn);
-
+    getUserDetail: function (callback) {
         $.ajax({
-            type: 'POST',
-            url: this.callbackUrl,
-            data: {'msisdn': msisdn},
-            success: function() {
-                console.log('Application backend notified');
+            type: 'GET',
+            url: this.options.resolveUserUrl,
+            success: function (data, textStatus, request) {
+                callback(data);
             }
         });
-    } else {
-        console.log('MSISDN header not found');
     }
 }
