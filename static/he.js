@@ -27,7 +27,7 @@ var HE = {
 
             window.location.hash = '';
 
-            this.storage.set('userDetail', JSON.stringify(data));
+            this._storeUserData(this.storage, data);
 
             callback(data);
         } else {
@@ -49,7 +49,7 @@ var HE = {
                     async: false,
                     url: this.options.resolveUserUrl,
                     success: function (data, textStatus, request) {
-                        _this.storage.set('userDetail', JSON.stringify(data));
+                        _this._storeUserData(_this.storage, data);
 
                         if (callback) {
                             callback(data);
@@ -64,5 +64,19 @@ var HE = {
         console.log('Redirecting to http page at ' + this.options.httpHostedPage);
 
         window.location = this.options.httpHostedPage + '?redirectUrl=' + this.options.redirectUrl;
+    },
+
+    _storeUserData: function(storage, data) {
+        if (this._isUserDataValid(data)) {
+            storage.set('userDetail', JSON.stringify(data));
+        }
+    },
+
+    _isUserDataValid: function(data) {
+        if (data.msisdn) {
+            return true;
+        }
+
+        return false;
     }
 }
