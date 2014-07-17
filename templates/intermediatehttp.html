@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HE</title>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="/static/persist-min.js"></script>
+    <script src="/static/he.js"></script>
+
+    <script>
+        function redirectBackToHttps(data) {
+
+            var redirectUrl = window.location.search.split('redirectUrl=')[1] + '#' + JSON.stringify(data);
+
+            console.log('Redirecting back to https at ' + redirectUrl);
+
+            window.location = redirectUrl;
+        }
+
+        var he = HE.init({
+            resolveUserUrl: '//127.0.0.1:5000/users/resolve/'
+        });
+
+        he.getUserDetail(redirectBackToHttps);
+    </script>
+</head>
+<body>
+	<h1>Static page with he.js under http (intermediate)</h1>
+</body>
+</html>

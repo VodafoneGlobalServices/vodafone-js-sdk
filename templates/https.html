@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HE</title>
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="/static/persist-min.js"></script>
+    <script src="/static/he.js"></script>
+
+    <script>
+        function handleResolvedUserData(data) {
+            console.log(data);
+        }
+
+        var he = HE.init({
+            httpHostedPage: 'http://127.0.0.1:5000/intermediatehttp.html',
+            redirectUrl: window.location
+        });
+
+        he.getUserDetail(handleResolvedUserData);
+    </script>
+</head>
+<body>
+	<h1>Static page with he.js under https</h1>
+</body>
+</html>
