@@ -17,7 +17,6 @@ def resolve_user():
         'tetheringConflict': False,
         'secure': False,
         'validated': False,
-        'MSISDN': '0048000000000',
         'ACR': '',
     })
 

@@ -4,7 +4,8 @@ HE = function() {
     var options = {
         resolveUserUrl: null,
         httpHostedPage: null,
-        redirectUrl: null
+        redirectUrl: null,
+        localStorageKey: 'userDetail'
     };
 
     var storage = new Persist.Store('he');
@@ -17,8 +18,8 @@ HE = function() {
         return this;
     };
 
-    var getUserDetail = function (callback) {
-        if (storage.get('userDetail')) {
+    var resolveUser = function (callback) {
+        if (storage.get(options.localStorageKey)) {
             console.log('Retrieving data from local storage');
 
             callback(JSON.parse(storage.get('userDetail')));
@@ -29,7 +30,7 @@ HE = function() {
 
             window.location.hash = '';
 
-            _storeUserData(storage, data);
+            storeUserData(storage, data);
 
             callback(data);
         } else {
@@ -40,50 +41,35 @@ HE = function() {
             console.log('Protocol is ' + protocol);
 
             if (protocol === 'https:') {
-                _redirectToHttp();
+                redirectToHttp();
             } else {
                 console.log('Getting user details from ' + options.resolveUserUrl);
 
-                $.ajax({
-                    type: 'GET',
-                    async: false,
-                    url: options.resolveUserUrl,
-                    success: function (data, textStatus, request) {
-                        console.log('Received user data ' + JSON.stringify(data));
+                $.getJSON(options.resolveUserUrl, function(data) {
+                    console.log('Received user data ' + JSON.stringify(data));
 
-                        _storeUserData(storage, data);
+                    storeUserData(storage, data);
 
-                        if (callback) {
-                            callback(data);
-                        }
+                    if (callback) {
+                        callback(data);
                     }
                 });
             }
         }
     };
 
-    var _redirectToHttp = function() {
+    var redirectToHttp = function() {
         console.log('Redirecting to http page at ' + options.httpHostedPage);
 
         window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
     };
 
-    var _storeUserData = function(storage, data) {
-        if (_isUserDataValid(data)) {
-            storage.set('userDetail', JSON.stringify(data));
-        }
-    };
-
-    var _isUserDataValid = function(data) {
-        if (data.msisdn) {
-            return true;
-        }
-
-        return false;
+    var storeUserData = function(storage, data) {
+        storage.set(options.localStorageKey, JSON.stringify(data));
     };
 
     return {
         init: init,
-        getUserDetail: getUserDetail
+        resolveUser: resolveUser
     };
 }();

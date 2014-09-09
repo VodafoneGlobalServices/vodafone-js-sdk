@@ -8,12 +8,12 @@
 
     <script>
         function handleResolvedUserData(data) {
-            console.log(data);
+            console.log(data.token);
         }
 
         HE.init({
             resolveUserUrl: '//127.0.0.1:5000/users/resolve/'
-        }).getUserDetail(
+        }).resolveUser(
             handleResolvedUserData
         );
     </script>
