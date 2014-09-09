@@ -11,11 +11,11 @@
             console.log(data);
         }
 
-        var he = HE.init({
+        HE.init({
             resolveUserUrl: '//127.0.0.1:5000/users/resolve/'
-        });
-
-        he.getUserDetail(handleResolvedUserData);
+        }).getUserDetail(
+            handleResolvedUserData
+        );
     </script>
 </head>
 <body>

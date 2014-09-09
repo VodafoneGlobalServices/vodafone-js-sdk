@@ -1,33 +1,35 @@
-var HE = {
-    options: {
+HE = window.HE || {};
+
+HE = function() {
+    var options = {
         resolveUserUrl: null,
         httpHostedPage: null,
         redirectUrl: null
-    },
+    };
 
-    init: function (options) {
-        for (var key in options) {
-            this.options[key] = options[key];
+    var storage = new Persist.Store('he');
+
+    var init = function (options_) {
+        for (var key in options_) {
+            options[key] = options_[key];
         }
 
-        this.storage = new Persist.Store('he');
-
         return this;
-    },
+    };
 
-    getUserDetail: function (callback) {
-        if (this.storage.get('userDetail')) {
+    var getUserDetail = function (callback) {
+        if (storage.get('userDetail')) {
             console.log('Retrieving data from local storage');
 
-            callback(JSON.parse(this.storage.get('userDetail')));
+            callback(JSON.parse(storage.get('userDetail')));
         } else if (window.location.hash) {
-            console.log('Retriving data from anchor');
+            console.log('Retrieving data from anchor');
 
             var data = JSON.parse(window.location.hash.substring(1));
 
             window.location.hash = '';
 
-            this._storeUserData(this.storage, data);
+            _storeUserData(storage, data);
 
             callback(data);
         } else {
@@ -38,18 +40,18 @@ var HE = {
             console.log('Protocol is ' + protocol);
 
             if (protocol === 'https:') {
-                this._redirectToHttp();
+                _redirectToHttp();
             } else {
-                console.log('Getting user details from ' + this.options.resolveUserUrl);
-
-                var _this = this;
+                console.log('Getting user details from ' + options.resolveUserUrl);
 
                 $.ajax({
                     type: 'GET',
                     async: false,
-                    url: this.options.resolveUserUrl,
+                    url: options.resolveUserUrl,
                     success: function (data, textStatus, request) {
-                        _this._storeUserData(_this.storage, data);
+                        console.log('Received user data ' + JSON.stringify(data));
+
+                        _storeUserData(storage, data);
 
                         if (callback) {
                             callback(data);
@@ -58,25 +60,30 @@ var HE = {
                 });
             }
         }
-    },
+    };
 
-    _redirectToHttp: function() {
-        console.log('Redirecting to http page at ' + this.options.httpHostedPage);
+    var _redirectToHttp = function() {
+        console.log('Redirecting to http page at ' + options.httpHostedPage);
 
-        window.location = this.options.httpHostedPage + '?redirectUrl=' + this.options.redirectUrl;
-    },
+        window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
+    };
 
-    _storeUserData: function(storage, data) {
-        if (this._isUserDataValid(data)) {
+    var _storeUserData = function(storage, data) {
+        if (_isUserDataValid(data)) {
             storage.set('userDetail', JSON.stringify(data));
         }
-    },
+    };
 
-    _isUserDataValid: function(data) {
+    var _isUserDataValid = function(data) {
         if (data.msisdn) {
             return true;
         }
 
         return false;
-    }
-}
+    };
+
+    return {
+        init: init,
+        getUserDetail: getUserDetail
+    };
+}();

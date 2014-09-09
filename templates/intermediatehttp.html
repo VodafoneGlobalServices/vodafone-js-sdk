@@ -16,11 +16,11 @@
             window.location = redirectUrl;
         }
 
-        var he = HE.init({
+        HE.init({
             resolveUserUrl: '//127.0.0.1:5000/users/resolve/'
-        });
-
-        he.getUserDetail(redirectBackToHttps);
+        }).getUserDetail(
+            redirectBackToHttps
+        );
     </script>
 </head>
 <body>

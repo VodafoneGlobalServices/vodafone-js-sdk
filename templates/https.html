@@ -11,12 +11,12 @@
             console.log(data);
         }
 
-        var he = HE.init({
+        HE.init({
             httpHostedPage: 'http://login.incubation.vodafone.com/static/intermediatehttp.html',
             redirectUrl: window.location
-        });
-
-        he.getUserDetail(handleResolvedUserData);
+        }).getUserDetail(
+            handleResolvedUserData
+        );
     </script>
 </head>
 <body>
