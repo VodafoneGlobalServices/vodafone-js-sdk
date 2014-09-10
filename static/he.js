@@ -2,10 +2,15 @@ HE = window.HE || {};
 
 HE = function() {
     var options = {
+        sdkId: 'js-sdk',
+        applicationId: null,
         resolveUserUrl: null,
         httpHostedPage: null,
         redirectUrl: null,
-        localStorageKey: 'userDetail'
+        localStorageKey: 'userDetail',
+        cookiesAllowed: false,
+        browserIdCookieName: 'browserId',
+        browserIdCookieExpirationDays: 10*365
     };
 
     var storage = new Persist.Store('he');
@@ -45,13 +50,27 @@ HE = function() {
             } else {
                 console.log('Getting user details from ' + options.resolveUserUrl);
 
-                $.getJSON(options.resolveUserUrl, function(data) {
-                    console.log('Received user data ' + JSON.stringify(data));
+                $.ajax({
+                    url: options.resolveUserUrl,
+                    type: 'POST',
+                    datatype: 'json',
+                    beforeSend: function (request) {
+                        if (options.cookiesAllowed) {
+                            request.setRequestHeader('x-vf-trace-subject-id', getBrowserId());
+                        }
 
-                    storeUserData(storage, data);
+                        request.setRequestHeader('x-vf-trace-subject-region', getUserRegion());
+                        request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
+                        request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
+                    },
+                    success: function(data) {
+                        console.log('Received user data ' + JSON.stringify(data));
 
-                    if (callback) {
-                        callback(data);
+                        storeUserData(storage, data);
+
+                        if (callback) {
+                            callback(data);
+                        }
                     }
                 });
             }
@@ -66,6 +85,25 @@ HE = function() {
 
     var storeUserData = function(storage, data) {
         storage.set(options.localStorageKey, JSON.stringify(data));
+    };
+
+    var getBrowserId = function() {
+        if ($.cookie(options.browserIdCookieName)) {
+            return $.cookie(options.browserIdCookieName);
+        } else {
+            $.cookie(
+                options.browserIdCookieName,
+                CryptoJS.MD5(new Date().getMilliseconds().toString()),
+                { expires: options.browserIdCookieExpirationDays });
+        }
+    };
+
+    var getUserRegion = function() {
+        return 'dummy';
+    };
+
+    var getTransactionId = function() {
+        return 'dummy';
     };
 
     return {

@@ -5,19 +5,13 @@ import sys
 app = Flask(__name__)
 
 
-@app.route("/users/resolve/")
+@app.route("/users/resolve/", methods=['POST'])
 @cross_origin()
 def resolve_user():
     return jsonify({
-        'resolved': True,
-        'stillRunning': False,
-        'source': 'header',
-        'token': '000000000000',
-        'expires': '2014-08-01T04:00:33+00:00',
-        'tetheringConflict': False,
-        'secure': False,
-        'validated': False,
-        'ACR': '',
+        "token": "b949a8e091294fe38525ed0b1561d191",
+        "acr": "204004STATRSV2014-09-10T13:59:29ZjiDcarz5BLCUrIR875pza14gRqP8wOlKfKMA1gfduV2vZXUSJzt4Kc+Q0qUAPO9XC5aLhbxmO00ZR4WVxi1ZMDvP/Wooo/FoA0kedBBIAdeC/yylwlILVlorijDaP/P3R3TzE6zmUDM7zuXbuLwjM+/H7SvTr5pSBopP6rW4tneXZEgBarJ4imCGlf4Q2eOtqkXHJJxn4UmDWNFRo7O+tF52jAnE1mEIEXsdld/M5guMbP6IJs77HECU7jYbYOu+ycty+ovkni+k8L3NdWAxHCkE4CgpC3qKYt6QJkdkrMcO3TsHD+ODcKTclIvtctWcOtcJM4nsV47msWJN6pkZfg==",
+        "expiresIn": 298741
     })
 
 
