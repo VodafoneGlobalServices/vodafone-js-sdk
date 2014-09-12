@@ -15,6 +15,8 @@ HE = function() {
 
     var storage = new Persist.Store('he');
 
+    var fingerprint = new Fingerprint().get();
+
     var init = function (options_) {
         for (var key in options_) {
             options[key] = options_[key];
@@ -59,7 +61,7 @@ HE = function() {
                             request.setRequestHeader('x-vf-trace-subject-id', getBrowserId());
                         }
 
-                        request.setRequestHeader('x-vf-trace-subject-region', getUserRegion());
+                        request.setRequestHeader('x-vf-trace-subject-region', getUserCountry());
                         request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
                         request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
                     },
@@ -93,17 +95,20 @@ HE = function() {
         } else {
             $.cookie(
                 options.browserIdCookieName,
-                CryptoJS.MD5(new Date().getMilliseconds().toString()),
-                { expires: options.browserIdCookieExpirationDays });
+                fingerprint,
+                { expires: options.browserIdCookieExpirationDays }
+            );
+
+            return fingerprint;
         }
     };
 
-    var getUserRegion = function() {
-        return 'dummy';
+    var getUserCountry = function() {
+        return window.navigator.language;
     };
 
     var getTransactionId = function() {
-        return 'dummy';
+        return CryptoJS.MD5(fingerprint + new Date().getMilliseconds());
     };
 
     return {
