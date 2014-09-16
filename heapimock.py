@@ -15,6 +15,16 @@ def resolve_user():
     })
 
 
+@app.route("/oauth/access-token/", methods=['POST'])
+@cross_origin()
+def authenticate_app():
+    return jsonify({
+        "access_token": "dh6RSNw01KE4QOf3iFgFq3cTSnWF",
+        "token_type": "Bearer",
+        "expires_in": "3599"
+    })
+
+
 @app.route("/http.html")
 def http():
     return render_template("/http.html")

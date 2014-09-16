@@ -10,16 +10,47 @@ HE = function() {
         localStorageKey: 'userDetail',
         cookiesAllowed: false,
         browserIdCookieName: 'browserId',
-        browserIdCookieExpirationDays: 10*365
+        browserIdCookieExpirationDays: 10*365,
+        apixAuthUrl: 'https://apisit.developer.vodafone.com/2/oauth/access-token',
+        apixGrantType: 'client_credentials',
+        apixClientId: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
+        apixClientSecret: 'k4l1RXZGqMnw2cD8',
+        apixScope: 'SSO_OAUTH2_INPUT'
     };
 
     var storage = new Persist.Store('he');
 
     var fingerprint = new Fingerprint().get();
 
+    var apixAuthToken;
+
+    var getAuthToken = function() {
+        $.ajax({
+            url: options.apixAuthUrl,
+            type: 'POST',
+            async: false,
+            data: 'grant_type=' + options.apixGrantType +
+                '&client_id=' + options.apixClientId +
+                '&client_secret=' + options.apixClientSecret +
+                '&scope=' + options.apixScope,
+            beforeSend: function(request) {
+                setTraceHeaders(request);
+            },
+            success: function(data) {
+                console.log('Received apix auth data ' + JSON.stringify(data));
+                apixAuthToken = data.access_token;
+                console.log('Set the apix token to ' + apixAuthToken);
+            }
+        });
+    };
+
     var init = function (options_) {
         for (var key in options_) {
             options[key] = options_[key];
+        }
+
+        if (!apixAuthToken) {
+            getAuthToken();
         }
 
         return this;
@@ -57,13 +88,8 @@ HE = function() {
                     type: 'POST',
                     datatype: 'json',
                     beforeSend: function (request) {
-                        if (options.cookiesAllowed) {
-                            request.setRequestHeader('x-vf-trace-subject-id', getBrowserId());
-                        }
-
-                        request.setRequestHeader('x-vf-trace-subject-region', getUserCountry());
-                        request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
-                        request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
+                        setTraceHeaders(request);
+                        request.setRequestHeader('Authorization', 'Bearer' + apixAuthToken);
                     },
                     success: function(data) {
                         console.log('Received user data ' + JSON.stringify(data));
@@ -108,7 +134,17 @@ HE = function() {
     };
 
     var getTransactionId = function() {
-        return CryptoJS.MD5(fingerprint + new Date().getMilliseconds());
+        return CryptoJS.MD5((fingerprint + new Date().getMilliseconds()).toString());
+    };
+
+    var setTraceHeaders = function(request) {
+        if (options.cookiesAllowed) {
+            request.setRequestHeader('x-vf-trace-subject-id', getBrowserId());
+        }
+
+        request.setRequestHeader('x-vf-trace-subject-region', getUserCountry());
+        request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
+        request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
     };
 
     return {
