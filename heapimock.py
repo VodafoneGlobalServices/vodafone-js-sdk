@@ -1,5 +1,5 @@
 from random import randint
-from flask import Flask, jsonify, render_template, Response
+from flask import Flask, jsonify, render_template, Response, request
 from flask_cors import cross_origin
 import sys
 
@@ -9,6 +9,9 @@ app = Flask(__name__)
 @app.route("/users/tokens/", methods=['POST'])
 @cross_origin()
 def resolve_user():
+    if request.args.get('error'):
+        raise ValueError('Ups...')
+
     return _random_response()
 
 

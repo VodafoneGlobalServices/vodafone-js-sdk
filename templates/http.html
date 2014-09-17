@@ -14,13 +14,18 @@
             console.log(data.token);
         }
 
+        function handleError(err) {
+            console.error('Caught an error - ' + err);
+        }
+
         HE.init({
             applicationId: 'somefancyapplicationid',
-            resolveUserUrl: '//127.0.0.1:5000/users/tokens/',
+            resolveUserUrl: '//127.0.0.1:5000/users/tokens/?error=True',
             apixAuthUrl: '//127.0.0.1:5000/oauth/access-token/',
             cookiesAllowed: true
         }).resolveUser(
-            handleResolvedUserData
+            handleResolvedUserData,
+            handleError
         );
     </script>
 </head>

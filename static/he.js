@@ -37,9 +37,14 @@ HE = function() {
                 setTraceHeaders(request);
             },
             success: function(data) {
-                console.log('Received apix auth data ' + JSON.stringify(data));
+                console.debug('Received apix auth data ' + JSON.stringify(data));
                 apixAuthToken = data.access_token;
-                console.log('Set the apix token to ' + apixAuthToken);
+                console.info('Set the apix token to ' + apixAuthToken);
+            },
+            error: function (request, status, error) {
+                console.error('Error occurred while getting authentication token at ' + options.apixAuthUrl +
+                    ', status: ' + status +
+                    ', error: ' + error);
             }
         });
     };
@@ -49,6 +54,8 @@ HE = function() {
             options[key] = options_[key];
         }
 
+        console.debug('SDK initialized with options: ' + JSON.stringify(options))
+
         if (!apixAuthToken) {
             getAuthToken();
         }
@@ -56,32 +63,34 @@ HE = function() {
         return this;
     };
 
-    var resolveUser = function (callback) {
+    var resolveUser = function (successCallback, errorCallback) {
         if (storage.get(options.localStorageKey)) {
-            console.log('Retrieving data from local storage');
-
-            callback(JSON.parse(storage.get('userDetail')));
+            console.info('Retrieving data from local storage');
+            console.debug('Retrieved data from local storage ' + storage.get('userDetail'));
+            successCallback(JSON.parse(storage.get('userDetail')));
         } else if (window.location.hash) {
-            console.log('Retrieving data from anchor');
+            console.info('Retrieving data from anchor');
 
             var data = JSON.parse(window.location.hash.substring(1));
+
+            console.debug('Retrieved data from anchor ' + window.location.hash.substring(1));
 
             window.location.hash = '';
 
             storeUserData(storage, data);
 
-            callback(data);
+            successCallback(data);
         } else {
-            console.log('Could not find data neither in local storage nor in anchor');
+            console.debug('Could not find data neither in local storage nor in anchor');
 
             var protocol = window.location.protocol;
 
-            console.log('Protocol is ' + protocol);
+            console.debug('Protocol is ' + protocol);
 
             if (protocol === 'https:') {
                 redirectToHttp();
             } else {
-                console.log('Getting user details from ' + options.resolveUserUrl);
+                console.info('Getting user details from ' + options.resolveUserUrl);
 
                 $.ajax({
                     url: options.resolveUserUrl,
@@ -92,12 +101,21 @@ HE = function() {
                         request.setRequestHeader('Authorization', 'Bearer' + apixAuthToken);
                     },
                     success: function(data) {
-                        console.log('Received user data ' + JSON.stringify(data));
+                        console.debug('Received user data ' + JSON.stringify(data));
 
                         storeUserData(storage, data);
 
-                        if (callback) {
-                            callback(data);
+                        if (successCallback) {
+                            successCallback(data);
+                        }
+                    },
+                    error: function (request, status, error) {
+                        console.error('Error occurred while getting user details from ' + options.resolveUserUrl +
+                            ', status: ' + status +
+                            ', error: ' + error);
+
+                        if (errorCallback) {
+                            errorCallback(error);
                         }
                     }
                 });
@@ -106,7 +124,7 @@ HE = function() {
     };
 
     var redirectToHttp = function() {
-        console.log('Redirecting to http page at ' + options.httpHostedPage);
+        console.info('Redirecting to http page at ' + options.httpHostedPage);
 
         window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
     };
