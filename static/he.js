@@ -87,10 +87,18 @@ HE = function() {
                 $.ajax({
                     url: options.resolveUserUrl,
                     type: 'POST',
-                    datatype: 'json',
+                    data: JSON.stringify({}),
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    crossDomain: true,
                     beforeSend: function (request) {
                         setTraceHeaders(request);
                         request.setRequestHeader('Authorization', 'Bearer' + apixAuthToken);
+                        request.setRequestHeader('backendScopes', 'seamless_id_user_details_acr_static');
+                        request.setRequestHeader('x-sdp-msisdn', '491741863437');
+                        request.setRequestHeader('x-int-opco', 'DE');
+                        request.setRequestHeader('Accept', 'application/json');
+                        request.setRequestHeader('Content-Type', 'application/json');
                     },
                     success: function(data) {
                         console.debug('Received user data ' + JSON.stringify(data));
