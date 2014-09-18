@@ -18,8 +18,6 @@ HE = function() {
         apixScope: 'SSO_OAUTH2_INPUT'
     };
 
-    var storage = new Persist.Store('he');
-
     var fingerprint = new Fingerprint().get();
 
     var apixAuthToken;
@@ -64,11 +62,7 @@ HE = function() {
     };
 
     var resolveUser = function (successCallback, errorCallback) {
-        if (storage.get(options.localStorageKey)) {
-            console.info('Retrieving data from local storage');
-            console.debug('Retrieved data from local storage ' + storage.get('userDetail'));
-            successCallback(JSON.parse(storage.get('userDetail')));
-        } else if (window.location.hash) {
+        if (window.location.hash) {
             console.info('Retrieving data from anchor');
 
             var data = JSON.parse(window.location.hash.substring(1));
@@ -76,8 +70,6 @@ HE = function() {
             console.debug('Retrieved data from anchor ' + window.location.hash.substring(1));
 
             window.location.hash = '';
-
-            storeUserData(storage, data);
 
             successCallback(data);
         } else {
@@ -103,8 +95,6 @@ HE = function() {
                     success: function(data) {
                         console.debug('Received user data ' + JSON.stringify(data));
 
-                        storeUserData(storage, data);
-
                         if (successCallback) {
                             successCallback(data);
                         }
@@ -127,10 +117,6 @@ HE = function() {
         console.info('Redirecting to http page at ' + options.httpHostedPage);
 
         window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
-    };
-
-    var storeUserData = function(storage, data) {
-        storage.set(options.localStorageKey, JSON.stringify(data));
     };
 
     var getBrowserId = function() {
