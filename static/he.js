@@ -11,6 +11,10 @@ HE = function() {
         cookiesAllowed: false,
         browserIdCookieName: 'browserId',
         browserIdCookieExpirationDays: 10*365,
+        throttlingCookieName: 'throttlingValue',
+        throttlingCookieExpirationName: 'throttlingExpiration',
+        throttlingPeriodMinutes: 1,
+        throttlingPerPerionLimit: 20,
         apixAuthUrl: 'https://apisit.developer.vodafone.com/2/oauth/access-token',
         apixGrantType: 'client_credentials',
         apixClientId: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
@@ -82,6 +86,8 @@ HE = function() {
             if (protocol === 'https:') {
                 redirectToHttp();
             } else {
+                incrementThrottlingCounter();
+
                 console.info('Getting user details from ' + options.resolveUserUrl);
 
                 $.ajax({
@@ -157,6 +163,25 @@ HE = function() {
         request.setRequestHeader('x-vf-trace-subject-region', getUserCountry());
         request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
         request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
+    };
+
+    var incrementThrottlingCounter = function() {
+        if ($.cookie(options.throttlingCookieName) && $.cookie(options.throttlingCookieExpirationName)
+            && new Date() < new Date($.cookie(options.throttlingCookieExpirationName))) {
+
+            var throttlingValue = $.cookie(options.throttlingCookieName, Number);
+
+            if (throttlingValue >= options.throttlingPerPerionLimit) {
+                throw new Error('Throttling exceeded');
+            } else {
+                $.cookie(options.throttlingCookieName, throttlingValue + 1);
+            }
+        } else {
+            var date = new Date();
+            date.setTime(date.getTime() + (options.throttlingPeriodMinutes * 60 * 1000));
+            $.cookie(options.throttlingCookieName, 1);
+            $.cookie(options.throttlingCookieExpirationName, date);
+        }
     };
 
     return {
