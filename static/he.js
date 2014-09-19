@@ -2,24 +2,7 @@ HE = window.HE || {};
 
 HE = function() {
     var options = {
-        sdkId: 'js-sdk',
-        applicationId: null,
-        resolveUserUrl: null,
-        httpHostedPage: null,
-        redirectUrl: null,
-        localStorageKey: 'userDetail',
-        cookiesAllowed: false,
-        browserIdCookieName: 'browserId',
-        browserIdCookieExpirationDays: 10*365,
-        throttlingCookieName: 'throttlingValue',
-        throttlingCookieExpirationName: 'throttlingExpiration',
-        throttlingPeriodMinutes: 1,
-        throttlingPerPerionLimit: 20,
-        apixAuthUrl: 'https://apisit.developer.vodafone.com/2/oauth/access-token',
-        apixGrantType: 'client_credentials',
-        apixClientId: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
-        apixClientSecret: 'k4l1RXZGqMnw2cD8',
-        apixScope: 'SSO_OAUTH2_INPUT'
+        configurationUrl: '//127.0.0.1:5000/configuration/'
     };
 
     var fingerprint = new Fingerprint().get();
@@ -55,6 +38,8 @@ HE = function() {
         for (var key in options_) {
             options[key] = options_[key];
         }
+
+        getConfiguration();
 
         console.debug('SDK initialized with options: ' + JSON.stringify(options))
 
@@ -182,6 +167,28 @@ HE = function() {
             $.cookie(options.throttlingCookieName, 1);
             $.cookie(options.throttlingCookieExpirationName, date);
         }
+    };
+
+    var getConfiguration = function() {
+        $.ajax({
+            url: options.configurationUrl,
+            type: 'GET',
+            async: false,
+            beforeSend: function(request) {
+                setTraceHeaders(request);
+            },
+            success: function(data) {
+                console.debug('Received SDK configuration ' + JSON.stringify(data));
+                for (var key in data) {
+                    options[key] = data[key];
+                }
+            },
+            error: function (request, status, error) {
+                throw new Error('Error occurred while getting configuration at ' + options.configurationUrl +
+                    ', status: ' + status +
+                    ', error: ' + error);
+            }
+        });
     };
 
     return {

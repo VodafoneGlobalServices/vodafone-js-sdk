@@ -46,6 +46,26 @@ def intermediatehttp():
     return render_template("/intermediatehttp.html")
 
 
+@app.route("/configuration/", methods=['GET'])
+def get_configuration():
+    return jsonify({
+        'sdkId': 'js-sdk',
+        'cookiesAllowed': True,
+        'browserIdCookieName': 'browserId',
+        'browserIdCookieExpirationDays': 10*365,
+        'throttlingCookieName': 'throttlingValue',
+        'throttlingCookieExpirationName': 'throttlingExpiration',
+        'throttlingPeriodMinutes': 1,
+        'throttlingPerPerionLimit': 20,
+        'resolveUserUrl': 'http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens?backendId=curlscript',
+        'apixAuthUrl': '//127.0.0.1:5000/oauth/access-token/',
+        'apixGrantType': 'client_credentials',
+        'apixClientId': 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
+        'apixClientSecret': 'k4l1RXZGqMnw2cD8',
+        'apixScope': 'SSO_OAUTH2_INPUT'
+    })
+
+
 def _user_resolved(token):
     return jsonify({
         "token": token,
