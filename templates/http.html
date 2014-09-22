@@ -11,7 +11,7 @@
 
     <script>
         function handleResolvedUserData(data) {
-            console.log(data.token);
+            console.log(data.tokenId);
         }
 
         function handleError(err) {
@@ -21,6 +21,7 @@
         HE.init({
             applicationId: 'somefancyapplicationid'
         }).resolveUser(
+            {},
             handleResolvedUserData,
             handleError
         );

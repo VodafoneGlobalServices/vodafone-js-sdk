@@ -50,7 +50,7 @@ HE = function() {
         return this;
     };
 
-    var resolveUser = function (successCallback, errorCallback) {
+    var resolveUser = function (userData, successCallback, errorCallback) {
         if (window.location.hash) {
             console.info('Retrieving data from anchor');
 
@@ -78,7 +78,7 @@ HE = function() {
                 $.ajax({
                     url: options.resolveUserUrl,
                     type: 'POST',
-                    data: JSON.stringify({}),
+                    data: JSON.stringify(userData),
                     dataType: 'json',
                     contentType: 'application/json',
                     crossDomain: true,
