@@ -56,7 +56,7 @@ def get_configuration():
         'throttlingCookieName': 'throttlingValue',
         'throttlingCookieExpirationName': 'throttlingExpiration',
         'throttlingPeriodMinutes': 1,
-        'throttlingPerPerionLimit': 20,
+        'throttlingPerPeriodLimit': 20,
         'resolveUserUrl': 'http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens?backendId=curlscript',
         'apixAuthUrl': '//127.0.0.1:5000/oauth/access-token/',
         'apixGrantType': 'client_credentials',

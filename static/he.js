@@ -156,7 +156,7 @@ HE = function() {
 
             var throttlingValue = $.cookie(options.throttlingCookieName, Number);
 
-            if (throttlingValue >= options.throttlingPerPerionLimit) {
+            if (throttlingValue >= options.throttlingPerPeriodLimit) {
                 throw new Error('Throttling exceeded');
             } else {
                 $.cookie(options.throttlingCookieName, throttlingValue + 1);
