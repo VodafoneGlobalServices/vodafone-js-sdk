@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>HE</title>
-    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
     <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/fingerprintjs/v0.5.1/fingerprint.js"></script>
@@ -16,7 +16,7 @@
         HE.init({
             httpHostedPage: 'http://login.incubation.vodafone.com/static/intermediatehttp.html',
             redirectUrl: window.location
-        }).resolveUser(
+        }).getToken(
             handleResolvedUserData
         );
     </script>

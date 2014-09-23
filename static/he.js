@@ -2,38 +2,7 @@ HE = window.HE || {};
 
 HE = function() {
     var options = {
-        configurationUrl: '//127.0.0.1:5000/configuration/'
-    };
-
-    var fingerprint = new Fingerprint().get();
-
-    var apixAuthToken;
-
-    var getAuthToken = function() {
-        validateMandatoryOptions(['apixAuthUrl', 'apixGrantType', 'apixClientId', 'apixClientSecret', 'apixScope']);
-
-        $.ajax({
-            url: options.apixAuthUrl,
-            type: 'POST',
-            async: false,
-            data: 'grant_type=' + options.apixGrantType +
-                '&client_id=' + options.apixClientId +
-                '&client_secret=' + options.apixClientSecret +
-                '&scope=' + options.apixScope,
-            beforeSend: function(request) {
-                setTraceHeaders(request);
-            },
-            success: function(data) {
-                console.debug('Received apix auth data ' + JSON.stringify(data));
-                apixAuthToken = data.access_token;
-                console.info('Set the apix token to ' + apixAuthToken);
-            },
-            error: function (request, status, error) {
-                console.error('Error occurred while getting authentication token at ' + options.apixAuthUrl +
-                    ', status: ' + status +
-                    ', error: ' + error);
-            }
-        });
+        configurationUrl: 'http://127.0.0.1:5000/configuration/'
     };
 
     var init = function (options_) {
@@ -41,18 +10,46 @@ HE = function() {
             options[key] = options_[key];
         }
 
-        getConfiguration();
+        getSdkConfig();
 
         console.debug('SDK initialized with options: ' + JSON.stringify(options))
-
-        if (!apixAuthToken) {
-            getAuthToken();
-        }
 
         return this;
     };
 
-    var validateMandatoryOptions = function (mandatoryOptions) {
+    var getToken = function (userData, successCallback, errorCallback) {
+        HE.Throttling.incrementCounter();
+
+        try {
+            HE.Token.get(userData, successCallback, errorCallback);
+        } catch (err) {
+            errorCallback(err);
+        }
+    };
+
+    var getSdkConfig = function() {
+        checkConfig(['configurationUrl']);
+
+        $.ajax({
+            url: options.configurationUrl,
+            type: 'GET',
+            async: false,
+            headers: HE.Trace.getHeaders(),
+            success: function(data) {
+                console.debug('Received SDK configuration ' + JSON.stringify(data));
+                for (var key in data) {
+                    options[key] = data[key];
+                }
+            },
+            error: function (request, status, error) {
+                throw new Error('Error occurred while getting configuration at ' + options.configurationUrl +
+                    ', status: ' + status +
+                    ', error: ' + error);
+            }
+        });
+    };
+
+    var checkConfig = function (mandatoryOptions) {
         if (!mandatoryOptions.every(function(element, index, array) {
             return options[element] != undefined;
         })) {
@@ -60,7 +57,128 @@ HE = function() {
         };
     };
 
-    var resolveUser = function (userData, successCallback, errorCallback) {
+    var getConfig = function () {
+        return options;
+    };
+
+    return {
+        init: init,
+        getToken: getToken,
+        getConfig: getConfig,
+        checkConfig: checkConfig
+    };
+}();
+
+HE.Apix = function() {
+    var appToken;
+
+    var getAppToken = function() {
+        if (appToken) {
+            return appToken
+        } else {
+            HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'apixClientId', 'apixClientSecret', 'apixScope']);
+
+            $.ajax({
+                url: HE.getConfig().apixAuthUrl,
+                type: 'POST',
+                async: false,
+                data: 'grant_type=' + HE.getConfig().apixGrantType +
+                    '&client_id=' + HE.getConfig().apixClientId +
+                    '&client_secret=' + HE.getConfig().apixClientSecret +
+                    '&scope=' + HE.getConfig().apixScope,
+                headers: HE.Trace.getHeaders(),
+                success: function(data) {
+                    console.debug('Received apix auth data ' + JSON.stringify(data));
+                    appToken = data.access_token;
+                    console.info('Set the apix token to ' + appToken);
+                },
+                error: function (request, status, error) {
+                    console.error('Error occurred while getting authentication token at ' + HE.getConfig().apixAuthUrl +
+                        ', status: ' + status +
+                        ', error: ' + error);
+                }
+            });
+
+            return appToken;
+        }
+    };
+
+    return {
+        getAppToken: getAppToken
+    };
+}();
+
+HE.Throttling = function() {
+   var incrementCounter = function() {
+        if ($.cookie(HE.getConfig().throttlingCookieName) && $.cookie(HE.getConfig().throttlingCookieExpirationName)
+            && new Date() < new Date($.cookie(HE.getConfig().throttlingCookieExpirationName))) {
+
+            var throttlingValue = $.cookie(HE.getConfig().throttlingCookieName, Number);
+
+            if (throttlingValue >= HE.getConfig().throttlingPerPeriodLimit) {
+                throw new Error('Throttling exceeded');
+            } else {
+                $.cookie(HE.getConfig().throttlingCookieName, throttlingValue + 1);
+            }
+        } else {
+            var date = new Date();
+            date.setTime(date.getTime() + (HE.getConfig().throttlingPeriodMinutes * 60 * 1000));
+            $.cookie(HE.getConfig().throttlingCookieName, 1);
+            $.cookie(HE.getConfig().throttlingCookieExpirationName, date);
+        }
+    };
+
+    return {
+        incrementCounter: incrementCounter
+    };
+}();
+
+HE.Trace = function() {
+    var fingerprint = new Fingerprint().get();
+
+    var getBrowserId = function() {
+        if ($.cookie(HE.getConfig().browserIdCookieName)) {
+            return $.cookie(HE.getConfig().browserIdCookieName);
+        } else {
+            $.cookie(
+                HE.getConfig().browserIdCookieName,
+                fingerprint,
+                { expires: HE.getConfig().browserIdCookieExpirationDays }
+            );
+
+            return fingerprint;
+        }
+    };
+
+    var getUserCountry = function() {
+        return window.navigator.language;
+    };
+
+    var getTransactionId = function() {
+        return CryptoJS.MD5((fingerprint + new Date().getMilliseconds()).toString());
+    };
+
+    var getHeaders = function() {
+        var headers = {
+            'x-vf-trace-subject-region': getUserCountry(),
+            'x-vf-trace-source': HE.getConfig().sdkId + '-' + HE.getConfig().applicationId,
+            'x-vf-trace-transaction-id': getTransactionId()
+        };
+
+        if (HE.getConfig().cookiesAllowed) {
+            headers['x-vf-trace-subject-id'] = getBrowserId();
+        }
+
+        return headers;
+    };
+
+    return {
+        getHeaders: getHeaders
+    };
+}();
+
+HE.Token = function() {
+    var get = function (msisdn, successCallback, errorCallback) {
         if (window.location.hash) {
             console.info('Retrieving data from anchor');
 
@@ -81,29 +199,19 @@ HE = function() {
             if (protocol === 'https:') {
                 redirectToHttp();
             } else {
-                validateMandatoryOptions(['resolveUserUrl']);
+                HE.checkConfig(['resolveUserUrl']);
 
-                incrementThrottlingCounter();
-
-                console.info('Getting user details from ' + options.resolveUserUrl);
+                console.info('Getting user details from ' + HE.getConfig().resolveUserUrl);
 
                 $.ajax({
-                    url: options.resolveUserUrl,
+                    url: HE.getConfig().resolveUserUrl,
                     type: 'POST',
-                    data: JSON.stringify(userData),
+                    data: setUpPostData(msisdn),
                     dataType: 'json',
                     contentType: 'application/json',
                     crossDomain: true,
-                    beforeSend: function (request) {
-                        setTraceHeaders(request);
-                        request.setRequestHeader('Authorization', 'Bearer' + apixAuthToken);
-                        request.setRequestHeader('backendScopes', 'seamless_id_user_details_acr_static');
-                        request.setRequestHeader('x-sdp-msisdn', '491741863437');
-                        request.setRequestHeader('x-int-opco', 'DE');
-                        request.setRequestHeader('Accept', 'application/json');
-                        request.setRequestHeader('Content-Type', 'application/json');
-                    },
-                    success: function(data) {
+                    headers: setUpHeaders(),
+                    success: function (data) {
                         console.debug('Received user data ' + JSON.stringify(data));
 
                         if (successCallback) {
@@ -111,7 +219,7 @@ HE = function() {
                         }
                     },
                     error: function (request, status, error) {
-                        console.error('Error occurred while getting user details from ' + options.resolveUserUrl +
+                        console.error('Error occurred while getting user details from ' + HE.getConfig().resolveUserUrl +
                             ', status: ' + status +
                             ', error: ' + error);
 
@@ -125,90 +233,48 @@ HE = function() {
     };
 
     var redirectToHttp = function() {
-        validateMandatoryOptions(['httpHostedPage', 'redirectUrl']);
+        HE.checkConfig(['httpHostedPage', 'redirectUrl']);
 
-        console.info('Redirecting to http page at ' + options.httpHostedPage);
+        console.info('Redirecting to http page at ' + HE.getConfig().httpHostedPage);
 
-        window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
+        window.location = HE.getConfig().httpHostedPage + '?redirectUrl=' + HE.getConfig().redirectUrl;
     };
 
-    var getBrowserId = function() {
-        if ($.cookie(options.browserIdCookieName)) {
-            return $.cookie(options.browserIdCookieName);
-        } else {
-            $.cookie(
-                options.browserIdCookieName,
-                fingerprint,
-                { expires: options.browserIdCookieExpirationDays }
-            );
+    var setUpHeaders = function () {
+        var headers = HE.Trace.getHeaders();
+        headers['Authorization'] = 'Bearer' + HE.Apix.getAppToken();
+        headers['backendScopes'] = 'seamless_id_user_details_acr_static';
 
-            return fingerprint;
-        }
+        return headers;
     };
 
-    var getUserCountry = function() {
-        return window.navigator.language;
-    };
+    var setUpPostData = function (msisdn) {
+        var data = {};
 
-    var getTransactionId = function() {
-        return CryptoJS.MD5((fingerprint + new Date().getMilliseconds()).toString());
-    };
-
-    var setTraceHeaders = function(request) {
-        if (options.cookiesAllowed) {
-            request.setRequestHeader('x-vf-trace-subject-id', getBrowserId());
-        }
-
-        request.setRequestHeader('x-vf-trace-subject-region', getUserCountry());
-        request.setRequestHeader('x-vf-trace-source', options.sdkId + '-' + options.applicationId);
-        request.setRequestHeader('x-vf-trace-transaction-id', getTransactionId());
-    };
-
-    var incrementThrottlingCounter = function() {
-        if ($.cookie(options.throttlingCookieName) && $.cookie(options.throttlingCookieExpirationName)
-            && new Date() < new Date($.cookie(options.throttlingCookieExpirationName))) {
-
-            var throttlingValue = $.cookie(options.throttlingCookieName, Number);
-
-            if (throttlingValue >= options.throttlingPerPeriodLimit) {
-                throw new Error('Throttling exceeded');
+        if (msisdn) {
+            if (msisdnValid(msisdn)) {
+                data['msisdn'] = msisdn;
+                data['market'] = getMarket(msisdn);
+                data['smsValidation'] = true;
             } else {
-                $.cookie(options.throttlingCookieName, throttlingValue + 1);
+                throw new Error('MSISDN invalid');
             }
-        } else {
-            var date = new Date();
-            date.setTime(date.getTime() + (options.throttlingPeriodMinutes * 60 * 1000));
-            $.cookie(options.throttlingCookieName, 1);
-            $.cookie(options.throttlingCookieExpirationName, date);
         }
+
+        return JSON.stringify(data);
     };
 
-    var getConfiguration = function() {
-        validateMandatoryOptions(['configurationUrl']);
+    var msisdnValid = function(msisdn) {
+//        TODO implement it (based on constraints from the configuration service)
+        return false;
+    };
 
-        $.ajax({
-            url: options.configurationUrl,
-            type: 'GET',
-            async: false,
-            beforeSend: function(request) {
-                setTraceHeaders(request);
-            },
-            success: function(data) {
-                console.debug('Received SDK configuration ' + JSON.stringify(data));
-                for (var key in data) {
-                    options[key] = data[key];
-                }
-            },
-            error: function (request, status, error) {
-                throw new Error('Error occurred while getting configuration at ' + options.configurationUrl +
-                    ', status: ' + status +
-                    ', error: ' + error);
-            }
-        });
+    var getMarket = function(msisdn) {
+//        TODO implement it (based on the configuration service)
+        return 'DE';
     };
 
     return {
-        init: init,
-        resolveUser: resolveUser
+        get: get
     };
 }();

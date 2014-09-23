@@ -15,7 +15,7 @@ def resolve_user():
     return _random_response()
 
 
-@app.route("/users/tokens/<token>", methods=['GET'])
+@app.route("/users/tokens/<token>/", methods=['GET'])
 @cross_origin()
 def check_status(token=None):
     return _random_response(token)
@@ -57,8 +57,9 @@ def get_configuration():
         'throttlingCookieExpirationName': 'throttlingExpiration',
         'throttlingPeriodMinutes': 1,
         'throttlingPerPeriodLimit': 20,
-        'resolveUserUrl': 'http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens?backendId=curlscript',
-        'apixAuthUrl': '//127.0.0.1:5000/oauth/access-token/',
+        # 'resolveUserUrl': 'http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens?backendId=curlscript',
+        'resolveUserUrl': 'http://127.0.0.1:5000/users/tokens/?backendId=curlscript',
+        'apixAuthUrl': 'http://127.0.0.1:5000/oauth/access-token/',
         'apixGrantType': 'client_credentials',
         'apixClientId': 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
         'apixClientSecret': 'k4l1RXZGqMnw2cD8',
@@ -68,7 +69,7 @@ def get_configuration():
 
 def _user_resolved(token):
     return jsonify({
-        "token": token,
+        "tokenId": token,
         "acr": "204004STATRSV2014-09-10T13:59:29ZjiDcarz5BLCUrIR875pza14gRqP8wOlKfKMA1gfduV2vZXUSJzt4Kc+Q0qUAPO9XC5aLhbxmO00ZR4WVxi1ZMDvP/Wooo/FoA0kedBBIAdeC/yylwlILVlorijDaP/P3R3TzE6zmUDM7zuXbuLwjM+/H7SvTr5pSBopP6rW4tneXZEgBarJ4imCGlf4Q2eOtqkXHJJxn4UmDWNFRo7O+tF52jAnE1mEIEXsdld/M5guMbP6IJs77HECU7jYbYOu+ycty+ovkni+k8L3NdWAxHCkE4CgpC3qKYt6QJkdkrMcO3TsHD+ODcKTclIvtctWcOtcJM4nsV47msWJN6pkZfg==",
         "expiresIn": 298741
     })

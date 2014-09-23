@@ -19,8 +19,8 @@
 
         HE.init({
             applicationId: 'somefancyapplicationid'
-        }).resolveUser(
-            {},
+        }).getToken(
+            { msisdn: '491741863437' },
             handleResolvedUserData,
             handleError
         );
