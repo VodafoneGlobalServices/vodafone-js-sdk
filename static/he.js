@@ -10,6 +10,8 @@ HE = function() {
     var apixAuthToken;
 
     var getAuthToken = function() {
+        validateMandatoryOptions(['apixAuthUrl', 'apixGrantType', 'apixClientId', 'apixClientSecret', 'apixScope']);
+
         $.ajax({
             url: options.apixAuthUrl,
             type: 'POST',
@@ -50,6 +52,14 @@ HE = function() {
         return this;
     };
 
+    var validateMandatoryOptions = function (mandatoryOptions) {
+        if (!mandatoryOptions.every(function(element, index, array) {
+            return options[element] != undefined;
+        })) {
+            throw new Error('Improperly configured - ' + mandatoryOptions + ' are mandatory');
+        };
+    };
+
     var resolveUser = function (userData, successCallback, errorCallback) {
         if (window.location.hash) {
             console.info('Retrieving data from anchor');
@@ -71,6 +81,8 @@ HE = function() {
             if (protocol === 'https:') {
                 redirectToHttp();
             } else {
+                validateMandatoryOptions(['resolveUserUrl']);
+
                 incrementThrottlingCounter();
 
                 console.info('Getting user details from ' + options.resolveUserUrl);
@@ -113,6 +125,8 @@ HE = function() {
     };
 
     var redirectToHttp = function() {
+        validateMandatoryOptions(['httpHostedPage', 'redirectUrl']);
+
         console.info('Redirecting to http page at ' + options.httpHostedPage);
 
         window.location = options.httpHostedPage + '?redirectUrl=' + options.redirectUrl;
@@ -170,6 +184,8 @@ HE = function() {
     };
 
     var getConfiguration = function() {
+        validateMandatoryOptions(['configurationUrl']);
+
         $.ajax({
             url: options.configurationUrl,
             type: 'GET',
