@@ -48,7 +48,11 @@ def get_configuration():
         'apixResolveUrl': '//127.0.0.1/users/tokens/',
         'apixAuthUrl': '//127.0.0.1/oauth/access-token/',
         'apixGrantType': 'client_credentials',
-        'apixScope': 'SSO_OAUTH2_INPUT'
+        'apixScope': 'SSO_OAUTH2_INPUT',
+        'msisdnValidationPattern': '^\d{12}$',
+        'markets': {
+            '49': 'DE'
+        }
     })
 
 

@@ -148,7 +148,7 @@ HE.Trace = function() {
     };
 
     var getUserCountry = function() {
-        return window.navigator.language;
+        return window.navigator.language.substr(3, 5);
     };
 
     var getTransactionId = function() {
@@ -249,13 +249,18 @@ HE.Token = function() {
     };
 
     var msisdnValid = function(msisdn) {
-//        TODO implement it (based on constraints from the configuration service)
-        return true;
+        var re = new RegExp(HE.getConfig().msisdnValidationPattern);
+
+        if (re.exec(msisdn)) {
+            return true;
+        }
+
+        return false;
     };
 
     var getMarket = function(msisdn) {
-//        TODO implement it (based on the configuration service)
-        return 'DE';
+        var countryCode = msisdn.substring(0, 2);
+        return HE.getConfig().markets[countryCode];
     };
 
     return {
