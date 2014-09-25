@@ -1,0 +1,30 @@
+{
+  "name": "he-js",
+  "version": "0.0.0",
+  "authors": [
+    "Kamil Chudy <kamil.chudy@blstream.com>"
+  ],
+  "description": "Seamless ID javascript SDK",
+  "main": "he.js",
+  "keywords": [
+    "sdk",
+    "seamlessid",
+    "header_enrichment",
+    "authentication"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "jquery-cookie": "~1.4.1",
+    "crypto-js": "https://crypto-js.googlecode.com/files/CryptoJS%20v3.1.2.zip",
+    "fingerprint": "~0.5.4"
+  }
+}
