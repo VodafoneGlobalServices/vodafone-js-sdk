@@ -2,7 +2,7 @@ HE = window.HE || {};
 
 HE = function() {
     var options = {
-        configurationUrl: 'http://127.0.0.1:5000/configuration/'
+        configurationUrl: '//127.0.0.1/configuration/'
     };
 
     var init = function (options_) {
@@ -17,14 +17,9 @@ HE = function() {
         return this;
     };
 
-    var getToken = function (userData, successCallback, errorCallback) {
+    var getToken = function (msisdn, successCallback, errorCallback) {
         HE.Throttling.incrementCounter();
-
-        try {
-            HE.Token.get(userData, successCallback, errorCallback);
-        } catch (err) {
-            errorCallback(err);
-        }
+        HE.Token.get(msisdn, successCallback, errorCallback);
     };
 
     var getSdkConfig = function() {
@@ -76,20 +71,20 @@ HE.Apix = function() {
         if (appToken) {
             return appToken
         } else {
-            HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'apixClientId', 'apixClientSecret', 'apixScope']);
+            HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'clientAppKey', 'clientAppSecret', 'apixScope']);
 
             $.ajax({
                 url: HE.getConfig().apixAuthUrl,
                 type: 'POST',
                 async: false,
                 data: 'grant_type=' + HE.getConfig().apixGrantType +
-                    '&client_id=' + HE.getConfig().apixClientId +
-                    '&client_secret=' + HE.getConfig().apixClientSecret +
+                    '&client_id=' + HE.getConfig().clientAppKey +
+                    '&client_secret=' + HE.getConfig().clientAppSecret +
                     '&scope=' + HE.getConfig().apixScope,
                 headers: HE.Trace.getHeaders(),
                 success: function(data) {
                     console.debug('Received apix auth data ' + JSON.stringify(data));
-                    appToken = data.access_token;
+                    appToken = data.token_type + data.access_token;
                     console.info('Set the apix token to ' + appToken);
                 },
                 error: function (request, status, error) {
@@ -137,17 +132,19 @@ HE.Trace = function() {
     var fingerprint = new Fingerprint().get();
 
     var getBrowserId = function() {
-        if ($.cookie(HE.getConfig().browserIdCookieName)) {
-            return $.cookie(HE.getConfig().browserIdCookieName);
-        } else {
-            $.cookie(
-                HE.getConfig().browserIdCookieName,
-                fingerprint,
-                { expires: HE.getConfig().browserIdCookieExpirationDays }
-            );
-
-            return fingerprint;
+        if (HE.getConfig().cookiesAllowed) {
+            if ($.cookie(HE.getConfig().browserIdCookieName)) {
+                return $.cookie(HE.getConfig().browserIdCookieName);
+            } else {
+                $.cookie(
+                    HE.getConfig().browserIdCookieName,
+                    fingerprint,
+                    { expires: HE.getConfig().browserIdCookieExpirationDays }
+                );
+            }
         }
+
+        return fingerprint;
     };
 
     var getUserCountry = function() {
@@ -159,17 +156,12 @@ HE.Trace = function() {
     };
 
     var getHeaders = function() {
-        var headers = {
+        return {
             'x-vf-trace-subject-region': getUserCountry(),
             'x-vf-trace-source': HE.getConfig().sdkId + '-' + HE.getConfig().applicationId,
-            'x-vf-trace-transaction-id': getTransactionId()
+            'x-vf-trace-transaction-id': getTransactionId(),
+            'x-vf-trace-subject-id': getBrowserId()
         };
-
-        if (HE.getConfig().cookiesAllowed) {
-            headers['x-vf-trace-subject-id'] = getBrowserId();
-        }
-
-        return headers;
     };
 
     return {
@@ -178,95 +170,87 @@ HE.Trace = function() {
 }();
 
 HE.Token = function() {
-    var get = function (msisdn, successCallback, errorCallback) {
-        if (window.location.hash) {
-            console.info('Retrieving data from anchor');
-
-            var data = JSON.parse(window.location.hash.substring(1));
-
-            console.debug('Retrieved data from anchor ' + window.location.hash.substring(1));
-
-            window.location.hash = '';
-
-            successCallback(data);
+    var get = function(msisdn, successCallback, errorCallback) {
+        if (msisdn) {
+            if (msisdnValid(msisdn)) {
+                callApix(msisdn, successCallback, errorCallback);
+            } else {
+                errorCallback("MSISDN invalid");
+            }
         } else {
-            console.debug('Could not find data neither in local storage nor in anchor');
-
             var protocol = window.location.protocol;
 
             console.debug('Protocol is ' + protocol);
 
-            if (protocol === 'https:') {
-                redirectToHttp();
+            if (protocol === 'http:') {
+                callHap(successCallback, errorCallback);
             } else {
-                HE.checkConfig(['resolveUserUrl']);
-
-                console.info('Getting user details from ' + HE.getConfig().resolveUserUrl);
-
-                $.ajax({
-                    url: HE.getConfig().resolveUserUrl,
-                    type: 'POST',
-                    data: setUpPostData(msisdn),
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    crossDomain: true,
-                    headers: setUpHeaders(),
-                    success: function (data) {
-                        console.debug('Received user data ' + JSON.stringify(data));
-
-                        if (successCallback) {
-                            successCallback(data);
-                        }
-                    },
-                    error: function (request, status, error) {
-                        console.error('Error occurred while getting user details from ' + HE.getConfig().resolveUserUrl +
-                            ', status: ' + status +
-                            ', error: ' + error);
-
-                        if (errorCallback) {
-                            errorCallback(error);
-                        }
-                    }
-                });
+                errorCallback("MSISDN was not provided - cannot get token under https protocol");
             }
         }
     };
 
-    var redirectToHttp = function() {
-        HE.checkConfig(['httpHostedPage', 'redirectUrl']);
+    var callHap = function (successCallback, errorCallback) {
+        HE.checkConfig(['hapResolveUrl']);
 
-        console.info('Redirecting to http page at ' + HE.getConfig().httpHostedPage);
-
-        window.location = HE.getConfig().httpHostedPage + '?redirectUrl=' + HE.getConfig().redirectUrl;
+        callResolver(
+            HE.getConfig().hapResolveUrl,
+            JSON.stringify({}),
+            successCallback, errorCallback
+        );
     };
 
-    var setUpHeaders = function () {
-        var headers = HE.Trace.getHeaders();
-        headers['Authorization'] = 'Bearer' + HE.Apix.getAppToken();
-        headers['backendScopes'] = 'seamless_id_user_details_acr_static';
+    var callApix = function (msisdn, successCallback, errorCallback) {
+        HE.checkConfig(['apixResolveUrl']);
 
-        return headers;
+        callResolver(
+            HE.getConfig().apixResolveUrl,
+            JSON.stringify({
+                msisdn: msisdn,
+                market: getMarket(msisdn)
+            }),
+            successCallback, errorCallback
+        );
     };
 
-    var setUpPostData = function (msisdn) {
-        var data = {};
+    var callResolver = function(url, data, successCallback, errorCallback) {
+        console.info('Getting token from ' + url);
 
-        if (msisdn) {
-            if (msisdnValid(msisdn)) {
-                data['msisdn'] = msisdn;
-                data['market'] = getMarket(msisdn);
-                data['smsValidation'] = true;
-            } else {
-                throw new Error('MSISDN invalid');
+        $.ajax({
+            url: url + '?backendId=' + HE.getConfig().applicationId,
+            type: 'POST',
+            data: data,
+            dataType: 'json',
+            contentType: 'application/json',
+            crossDomain: true,
+            headers: function() {
+                var headers = HE.Trace.getHeaders();
+                headers['Authorization'] = HE.Apix.getAppToken();
+                headers['backendScopes'] = 'seamless_id_user_details_acr_static';
+                return headers;
+            }(),
+            success: function (data) {
+                console.debug('Received token ' + JSON.stringify(data));
+
+                if (successCallback) {
+                    successCallback(data);
+                }
+            },
+            error: function (request, status, error) {
+                console.error('Error occurred while getting token from ' + url +
+                    ', status: ' + status +
+                    ', error: ' + error);
+
+                if (errorCallback) {
+                    errorCallback(error);
+                }
             }
-        }
-
-        return JSON.stringify(data);
+        });
     };
 
     var msisdnValid = function(msisdn) {
 //        TODO implement it (based on constraints from the configuration service)
-        return false;
+        return true;
     };
 
     var getMarket = function(msisdn) {

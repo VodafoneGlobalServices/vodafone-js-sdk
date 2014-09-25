@@ -18,9 +18,12 @@
         }
 
         HE.init({
-            applicationId: 'somefancyapplicationid'
+            applicationId: 'somefancyapplicationid',
+            clientAppKey: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
+            clientAppSecret: 'k4l1RXZGqMnw2cD8',
+            cookiesAllowed: true
         }).getToken(
-            { msisdn: '491741863437' },
+            null,
             handleResolvedUserData,
             handleError
         );

@@ -5,9 +5,10 @@ import sys
 
 app = Flask(__name__)
 
+headers = ['x-vf-trace-subject-region', 'x-vf-trace-source', 'x-vf-trace-transaction-id', 'x-vf-trace-subject-id']
 
 @app.route("/users/tokens/", methods=['POST'])
-@cross_origin()
+@cross_origin(headers=headers)
 def resolve_user():
     if request.args.get('error'):
         raise ValueError('Ups...')
@@ -16,13 +17,13 @@ def resolve_user():
 
 
 @app.route("/users/tokens/<token>/", methods=['GET'])
-@cross_origin()
+@cross_origin(headers=headers)
 def check_status(token=None):
     return _random_response(token)
 
 
 @app.route("/oauth/access-token/", methods=['POST'])
-@cross_origin()
+@cross_origin(headers=headers)
 def authenticate_app():
     return jsonify({
         "access_token": "dh6RSNw01KE4QOf3iFgFq3cTSnWF",
@@ -31,38 +32,22 @@ def authenticate_app():
     })
 
 
-@app.route("/http.html")
-def http():
-    return render_template("/http.html")
-
-
-@app.route("/https.html")
-def https():
-    return render_template("/https.html")
-
-
-@app.route("/intermediatehttp.html")
-def intermediatehttp():
-    return render_template("/intermediatehttp.html")
-
-
 @app.route("/configuration/", methods=['GET'])
+@cross_origin(headers=headers)
 def get_configuration():
     return jsonify({
         'sdkId': 'js-sdk',
-        'cookiesAllowed': True,
+        'cookiesAllowed': False,
         'browserIdCookieName': 'browserId',
         'browserIdCookieExpirationDays': 10*365,
         'throttlingCookieName': 'throttlingValue',
         'throttlingCookieExpirationName': 'throttlingExpiration',
         'throttlingPeriodMinutes': 1,
         'throttlingPerPeriodLimit': 20,
-        # 'resolveUserUrl': 'http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens?backendId=curlscript',
-        'resolveUserUrl': 'http://127.0.0.1:5000/users/tokens/?backendId=curlscript',
-        'apixAuthUrl': 'http://127.0.0.1:5000/oauth/access-token/',
+        'hapResolveUrl': '//127.0.0.1/users/tokens/',
+        'apixResolveUrl': '//127.0.0.1/users/tokens/',
+        'apixAuthUrl': '//127.0.0.1/oauth/access-token/',
         'apixGrantType': 'client_credentials',
-        'apixClientId': 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
-        'apixClientSecret': 'k4l1RXZGqMnw2cD8',
         'apixScope': 'SSO_OAUTH2_INPUT'
     })
 
@@ -89,8 +74,18 @@ def _random_response(token='b949a8e091294fe38525ed0b1561d191'):
         return _user_still_resolving(token)
 
 
+@app.route("/http.html")
+def http():
+    return render_template("/http.html")
+
+
+@app.route("/https.html")
+def https():
+    return render_template("/https.html")
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == 'secure':
-        app.run('0.0.0.0', debug=True, port=5100, ssl_context='adhoc')
+        app.run('0.0.0.0', debug=True, port=443, ssl_context='adhoc')
     else:
-        app.run('0.0.0.0', debug=True, port=5000)
+        app.run('0.0.0.0', debug=True, port=80)
