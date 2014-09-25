@@ -6,15 +6,16 @@
     <script src="/static/lib/jquery-cookie/jquery.cookie.js"></script>
     <script src="/static/lib/crypto-js/rollups/md5.js"></script>
     <script src="/static/lib/fingerprint/fingerprint.js"></script>
-    <script src="/static/he.js"></script>
+    <script src="/static/he.min.js"></script>
 
     <script>
         function handleResolvedUserData(data) {
-            console.log(data.tokenId);
+            console.log('Received token: ' + data.tokenId);
+            $('#token').text(data.tokenId);
         }
 
         function handleError(err) {
-            console.error('Caught an error - ' + err);
+            console.error('Caught an error: ' + err);
         }
 
         HE.init({
@@ -31,5 +32,6 @@
 </head>
 <body>
 	<h1>Static page with he.js under http</h1>
+    <h3>Received token: <span id="token"></span></h3>
 </body>
 </html>
