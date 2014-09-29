@@ -6,11 +6,11 @@ HE = function() {
     };
 
     var init = function (options_) {
+        getSdkConfig();
+
         for (var key in options_) {
             options[key] = options_[key];
         }
-
-        getSdkConfig();
 
         console.debug('SDK initialized with options: ' + JSON.stringify(options))
 
@@ -29,7 +29,6 @@ HE = function() {
             url: options.configurationUrl,
             type: 'GET',
             async: false,
-            headers: HE.Trace.getHeaders(),
             success: function(data) {
                 console.debug('Received SDK configuration ' + JSON.stringify(data));
                 for (var key in data) {
@@ -129,22 +128,27 @@ HE.Throttling = function() {
 }();
 
 HE.Trace = function() {
-    var fingerprint = new Fingerprint().get();
+    var fingerprint = new Fingerprint();
+    var parser = new UAParser();
 
-    var getBrowserId = function() {
+    var getSubjectId = function() {
         if (HE.getConfig().cookiesAllowed) {
-            if ($.cookie(HE.getConfig().browserIdCookieName)) {
-                return $.cookie(HE.getConfig().browserIdCookieName);
-            } else {
+            if (!$.cookie(HE.getConfig().subjectIdCookieName)) {
                 $.cookie(
-                    HE.getConfig().browserIdCookieName,
-                    fingerprint,
-                    { expires: HE.getConfig().browserIdCookieExpirationDays }
+                    HE.getConfig().subjectIdCookieName,
+                    parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
+                        + parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ '
+                        + fingerprint.get(),
+                    { expires: HE.getConfig().subjectIdCookieExpirationDays }
                 );
             }
+
+            return $.cookie(HE.getConfig().subjectIdCookieName)
         }
 
-        return fingerprint;
+        return parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
+            + parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ '
+            + fingerprint.get();
     };
 
     var getUserCountry = function() {
@@ -160,7 +164,7 @@ HE.Trace = function() {
             'x-vf-trace-subject-region': getUserCountry(),
             'x-vf-trace-source': HE.getConfig().sdkId + '-' + HE.getConfig().applicationId,
             'x-vf-trace-transaction-id': getTransactionId(),
-            'x-vf-trace-subject-id': getBrowserId()
+            'x-vf-trace-subject-id': getSubjectId()
         };
     };
 

@@ -38,8 +38,8 @@ def get_configuration():
     return jsonify({
         'sdkId': 'js-sdk',
         'cookiesAllowed': False,
-        'browserIdCookieName': 'browserId',
-        'browserIdCookieExpirationDays': 10*365,
+        'subjectIdCookieName': 'subjectId',
+        'subjectIdCookieExpirationDays': 10*365,
         'throttlingCookieName': 'throttlingValue',
         'throttlingCookieExpirationName': 'throttlingExpiration',
         'throttlingPeriodMinutes': 1,

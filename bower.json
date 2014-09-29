@@ -25,6 +25,7 @@
     "jquery": "~2.1.1",
     "jquery-cookie": "~1.4.1",
     "crypto-js": "https://crypto-js.googlecode.com/files/CryptoJS%20v3.1.2.zip",
-    "fingerprint": "~0.5.4"
+    "fingerprint": "~0.5.4",
+    "ua-parser-js": "~0.7.0"
   }
 }
