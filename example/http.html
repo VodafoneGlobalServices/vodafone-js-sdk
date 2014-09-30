@@ -2,12 +2,12 @@
 <html>
 <head>
     <title>HE</title>
-    <script src="/static/lib/jquery/dist/jquery.min.js"></script>
-    <script src="/static/lib/jquery-cookie/jquery.cookie.js"></script>
-    <script src="/static/lib/crypto-js/rollups/md5.js"></script>
-    <script src="/static/lib/fingerprint/fingerprint.js"></script>
-    <script src="/static/lib/ua-parser-js/src/ua-parser.min.js"></script>
-    <script src="/static/he.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/md5.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/fingerprintjs/v0.5.1/fingerprint.min.js"></script>
+    <script src="static/ua-parser.min.js"></script>
+    <script src="static/he.js"></script>
 
     <script>
         function handleResolvedUserData(data) {
@@ -20,19 +20,19 @@
         }
 
         HE.init({
-            applicationId: 'somefancyapplicationid',
+            applicationId: 'curlscript',
             clientAppKey: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
             clientAppSecret: 'k4l1RXZGqMnw2cD8',
             cookiesAllowed: true
         }).getToken(
-            '491741863437',
+            null,
             handleResolvedUserData,
             handleError
         );
     </script>
 </head>
 <body>
-	<h1>Static page with he.js under https</h1>
+	<h1>Static page with he.js under http</h1>
     <h3>Received token: <span id="token"></span></h3>
 </body>
 </html>

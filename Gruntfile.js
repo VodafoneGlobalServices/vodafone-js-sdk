@@ -15,12 +15,16 @@ module.exports = function (grunt) {
                 dest: 'dist/he.min.js'
             },
         },
+        'serve': {
+            'path': 'example/'
+        },
     });
 
     // These plugins provide necessary tasks.
     grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-serve');
 
     // Default task.
-    grunt.registerTask('default', ['uglify']);
+    grunt.registerTask('default', ['uglify', 'serve']);
 
 };

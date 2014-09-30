@@ -2,7 +2,8 @@ HE = window.HE || {};
 
 HE = function() {
     var options = {
-        configurationUrl: '//127.0.0.1/configuration/'
+//        normally this will be retrieved from the configuration service
+        configurationUrl: '//127.0.0.1:9000/example/config.json'
     };
 
     var init = function (options_) {
@@ -229,8 +230,13 @@ HE.Token = function() {
             crossDomain: true,
             headers: function() {
                 var headers = HE.Trace.getHeaders();
-                headers['Authorization'] = HE.Apix.getAppToken();
+//                application authorization skipped due to required APIX changed (CORS support)
+//                headers['Authorization'] = HE.Apix.getAppToken();
                 headers['backendScopes'] = 'seamless_id_user_details_acr_static';
+
+//                the following two headers will be set by HAP in the final solution
+                headers['x-sdp-msisdn'] = '491741863437';
+                headers['x-int-opco-id'] = 'DE';
                 return headers;
             }(),
             success: function (data) {
