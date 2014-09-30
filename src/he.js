@@ -13,7 +13,7 @@ HE = function() {
             options[key] = options_[key];
         }
 
-        console.debug('SDK initialized with options: ' + JSON.stringify(options))
+        console.debug('SDK initialized with options: ' + JSON.stringify(options));
 
         return this;
     };
@@ -46,10 +46,10 @@ HE = function() {
 
     var checkConfig = function (mandatoryOptions) {
         if (!mandatoryOptions.every(function(element, index, array) {
-            return options[element] != undefined;
+            return options[element] !== undefined;
         })) {
             throw new Error('Improperly configured - ' + mandatoryOptions + ' are mandatory');
-        };
+        }
     };
 
     var getConfig = function () {
@@ -69,7 +69,7 @@ HE.Apix = function() {
 
     var getAppToken = function() {
         if (appToken) {
-            return appToken
+            return appToken;
         } else {
             HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'clientAppKey', 'clientAppSecret', 'apixScope']);
 
@@ -105,8 +105,8 @@ HE.Apix = function() {
 
 HE.Throttling = function() {
    var incrementCounter = function() {
-        if ($.cookie(HE.getConfig().throttlingCookieName) && $.cookie(HE.getConfig().throttlingCookieExpirationName)
-            && new Date() < new Date($.cookie(HE.getConfig().throttlingCookieExpirationName))) {
+        if ($.cookie(HE.getConfig().throttlingCookieName) && $.cookie(HE.getConfig().throttlingCookieExpirationName) &&
+            new Date() < new Date($.cookie(HE.getConfig().throttlingCookieExpirationName))) {
 
             var throttlingValue = $.cookie(HE.getConfig().throttlingCookieName, Number);
 
@@ -137,19 +137,19 @@ HE.Trace = function() {
             if (!$.cookie(HE.getConfig().subjectIdCookieName)) {
                 $.cookie(
                     HE.getConfig().subjectIdCookieName,
-                    parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
-                        + parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ '
-                        + fingerprint.get(),
+                    parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
+                        parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
+                        fingerprint.get(),
                     { expires: HE.getConfig().subjectIdCookieExpirationDays }
                 );
             }
 
-            return $.cookie(HE.getConfig().subjectIdCookieName)
+            return $.cookie(HE.getConfig().subjectIdCookieName);
         }
 
-        return parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
-            + parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ '
-            + fingerprint.get();
+        return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
+            parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
+            fingerprint.get();
     };
 
     var getUserCountry = function() {
@@ -232,7 +232,7 @@ HE.Token = function() {
                 var headers = HE.Trace.getHeaders();
 //                application authorization skipped due to required APIX changed (CORS support)
 //                headers['Authorization'] = HE.Apix.getAppToken();
-                headers['backendScopes'] = 'seamless_id_user_details_acr_static';
+                headers.backendScopes = 'seamless_id_user_details_acr_static';
 
 //                the following two headers will be set by HAP in the final solution
                 headers['x-sdp-msisdn'] = '491741863437';
