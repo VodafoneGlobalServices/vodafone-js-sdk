@@ -103,23 +103,23 @@ HE.Apix = function() {
     };
 }();
 
-HE.Throttling = function() {
-   var incrementCounter = function() {
-        if ($.cookie(HE.getConfig().throttlingCookieName) && $.cookie(HE.getConfig().throttlingCookieExpirationName)
-            && new Date() < new Date($.cookie(HE.getConfig().throttlingCookieExpirationName))) {
+HE.Throttling = function () {
+    var incrementCounter = function () {
+        if (HE.Cookie.get(HE.getConfig().throttlingCookieName) && HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName)
+            && new Date() < new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName))) {
 
-            var throttlingValue = $.cookie(HE.getConfig().throttlingCookieName, Number);
+            var throttlingValue = HE.Cookie.get(HE.getConfig().throttlingCookieName, Number);
 
             if (throttlingValue >= HE.getConfig().throttlingPerPeriodLimit) {
                 throw new Error('Throttling exceeded');
             } else {
-                $.cookie(HE.getConfig().throttlingCookieName, throttlingValue + 1);
+                HE.Cookie.set(HE.getConfig().throttlingCookieName, throttlingValue + 1);
             }
         } else {
             var date = new Date();
             date.setTime(date.getTime() + (HE.getConfig().throttlingPeriodMinutes * 60 * 1000));
-            $.cookie(HE.getConfig().throttlingCookieName, 1);
-            $.cookie(HE.getConfig().throttlingCookieExpirationName, date);
+            HE.Cookie.set(HE.getConfig().throttlingCookieName, 1);
+            HE.Cookie.set(HE.getConfig().throttlingCookieExpirationName, date);
         }
     };
 
@@ -134,8 +134,8 @@ HE.Trace = function() {
 
     var getSubjectId = function() {
         if (HE.getConfig().cookiesAllowed) {
-            if (!$.cookie(HE.getConfig().subjectIdCookieName)) {
-                $.cookie(
+            if (!HE.Cookie.get(HE.getConfig().subjectIdCookieName)) {
+                HE.Cookie.set(
                     HE.getConfig().subjectIdCookieName,
                     parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
                         + parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ '
@@ -144,7 +144,7 @@ HE.Trace = function() {
                 );
             }
 
-            return $.cookie(HE.getConfig().subjectIdCookieName)
+            return HE.Cookie.get(HE.getConfig().subjectIdCookieName)
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ '
@@ -157,7 +157,7 @@ HE.Trace = function() {
     };
 
     var getTransactionId = function() {
-        return CryptoJS.MD5((fingerprint + new Date().getMilliseconds()).toString());
+        return CryptoJS.MD5((fingerprint.get() + new Date().getMilliseconds()).toString());
     };
 
     var getHeaders = function() {
@@ -274,6 +274,40 @@ HE.Token = function() {
     };
 
     return {
+        get: get
+    };
+}();
+
+HE.Cookie = function () {
+    var passphrase = "seamlessidsupersecretpassphrase";
+
+    var set = function (name, value, expires_in_days) {
+        $.cookie(
+            encrypt(name),
+            encrypt(value),
+            { expires: expires_in_days }
+        );
+    };
+
+    var get = function (name) {
+        var encryptedName = encrypt(name);
+        var value = $.cookie(encryptedName);
+
+        if (value) {
+            return decrypt(value);
+        }
+    };
+
+    var encrypt = function (plain) {
+        return CryptoJS.Rabbit.encrypt(plain, passphrase);
+    };
+
+    var decrypt = function (encrypted) {
+        return CryptoJS.Rabbit.decrypt(encrypted, passphrase);
+    };
+
+    return {
+        set: set,
         get: get
     };
 }();
