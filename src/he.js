@@ -105,12 +105,10 @@ HE.Apix = function() {
 
 HE.Throttling = function () {
     var incrementCounter = function () {
-        if (HE.Cookie.get(HE.getConfig().throttlingCookieName) &&
-            HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName) &&
-            new Date() < new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName))) {
+        var throttlingValue = parseInt(HE.Cookie.get(HE.getConfig().throttlingCookieName));
+        var throttlingExpiration = new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName));
 
-            var throttlingValue = HE.Cookie.get(HE.getConfig().throttlingCookieName, Number);
-
+        if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
             if (throttlingValue >= HE.getConfig().throttlingPerPeriodLimit) {
                 throw new Error('Throttling exceeded');
             } else {
@@ -237,7 +235,7 @@ HE.Token = function() {
 
 //                the following two headers will be set by HAP in the final solution
                 headers['x-sdp-msisdn'] = '491741863437';
-                headers['x-int-opco-id'] = 'DE';
+                headers['x-int-opco'] = 'DE';
                 return headers;
             }(),
             success: function (data) {
@@ -280,14 +278,17 @@ HE.Token = function() {
 }();
 
 HE.Cookie = function () {
-    var passphrase = "seamlessidsupersecretpassphrase";
+    var key = CryptoJS.enc.Hex.parse("000102030405060708090a0b0c0d0e0f");
+    var iv = CryptoJS.enc.Hex.parse("101112131415161718191a1b1c1d1e1f");
 
-    var set = function (name, value, expires_in_days) {
-        $.cookie(
-            encrypt(name),
-            encrypt(value),
-            { expires: expires_in_days }
-        );
+    var set = function (name, value, options) {
+        if (name && value) {
+            $.cookie(
+                encrypt(name.toString()),
+                encrypt(value.toString()),
+                options
+            );
+        }
     };
 
     var get = function (name) {
@@ -300,11 +301,11 @@ HE.Cookie = function () {
     };
 
     var encrypt = function (plain) {
-        return CryptoJS.Rabbit.encrypt(plain, passphrase);
+        return CryptoJS.Rabbit.encrypt(plain, key, { iv: iv }).toString();
     };
 
     var decrypt = function (encrypted) {
-        return CryptoJS.Rabbit.decrypt(encrypted, passphrase);
+        return CryptoJS.Rabbit.decrypt(encrypted, key, { iv: iv }).toString(CryptoJS.enc.Utf8);
     };
 
     return {
