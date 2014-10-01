@@ -105,8 +105,9 @@ HE.Apix = function() {
 
 HE.Throttling = function () {
     var incrementCounter = function () {
-        if (HE.Cookie.get(HE.getConfig().throttlingCookieName) && HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName)
-            && new Date() < new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName))) {
+        if (HE.Cookie.get(HE.getConfig().throttlingCookieName) &&
+            HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName) &&
+            new Date() < new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName))) {
 
             var throttlingValue = HE.Cookie.get(HE.getConfig().throttlingCookieName, Number);
 
@@ -144,7 +145,7 @@ HE.Trace = function() {
                 );
             }
 
-            return HE.Cookie.get(HE.getConfig().subjectIdCookieName)
+            return HE.Cookie.get(HE.getConfig().subjectIdCookieName);
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
