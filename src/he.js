@@ -77,6 +77,7 @@ HE.Apix = function() {
                 url: HE.getConfig().apixAuthUrl,
                 type: 'POST',
                 async: false,
+                //FIXME: use callbacks instead of async: false which is not supported for cross domain requests.
                 data: 'grant_type=' + HE.getConfig().apixGrantType +
                     '&client_id=' + HE.getConfig().clientAppKey +
                     '&client_secret=' + HE.getConfig().clientAppSecret +
@@ -152,6 +153,7 @@ HE.Trace = function() {
     };
 
     var getUserCountry = function() {
+        //FIXME: check the length of this parameter before doing the substring
         return window.navigator.language.substr(3, 5);
     };
 
