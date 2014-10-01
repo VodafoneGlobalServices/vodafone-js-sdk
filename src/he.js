@@ -105,7 +105,7 @@ HE.Apix = function() {
 
 HE.Throttling = function () {
     var incrementCounter = function () {
-        var throttlingValue = parseInt(HE.Cookie.get(HE.getConfig().throttlingCookieName));
+        var throttlingValue = parseInt(HE.Cookie.get(HE.getConfig().throttlingCookieName), 10);
         var throttlingExpiration = new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName));
 
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
