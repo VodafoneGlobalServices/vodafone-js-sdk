@@ -11,13 +11,18 @@
     <script src="static/he.js"></script>
 
     <script>
-        function handleResolvedUserData(data) {
-            console.log('Received token: ' + data.tokenId);
-            $('#token').text(data.tokenId);
+        function handleResolvedUserData(result) {
+            if (result.code === HE.Result.codes.TOKEN_CREATED) {
+                $('#status').text('Received token ' + result.data.tokenId);
+            } else if (result.code === HE.Result.codes.OTP_SMS_SENT) {
+                $('#status').text('PIN sent to the given MSISDN');
+            } else {
+                $('#status').text('Unsupported result');
+            }
         }
 
-        function handleError(err) {
-            console.error('Caught an error: ' + err);
+        function handleError(result) {
+            $('#status').text('Caught an error: ' + result.code + ' ' + result.message);
         }
 
         HE.init({
@@ -34,6 +39,6 @@
 </head>
 <body>
 	<h1>Static page with he.js under http</h1>
-    <h3>Received token: <span id="token"></span></h3>
+    <h3>Status: <span id="status"></span></h3>
 </body>
 </html>

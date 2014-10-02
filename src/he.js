@@ -179,7 +179,7 @@ HE.Token = function() {
             if (msisdnValid(msisdn)) {
                 callApix(msisdn, successCallback, errorCallback);
             } else {
-                errorCallback("MSISDN invalid");
+                errorCallback(new HE.Result(HE.Result.codes.INVALID_MSISDN, null, null));
             }
         } else {
             var protocol = window.location.protocol;
@@ -189,7 +189,8 @@ HE.Token = function() {
             if (protocol === 'http:') {
                 callHap(successCallback, errorCallback);
             } else {
-                errorCallback("MSISDN was not provided - cannot get token under https protocol");
+                errorCallback(new HE.Result(HE.Result.codes.NO_MSISDN_UNDER_HTTPS,
+                    "MSISDN was not provided - cannot get token under https protocol", null));
             }
         }
     };
@@ -205,10 +206,10 @@ HE.Token = function() {
     };
 
     var callApix = function (msisdn, successCallback, errorCallback) {
-        HE.checkConfig(['apixResolveUrl']);
+        HE.checkConfig(['apixHost', 'apixResolveUrl']);
 
         callResolver(
-            HE.getConfig().apixResolveUrl,
+            HE.getConfig().apixHost + HE.getConfig().apixResolveUrl,
             JSON.stringify({
                 msisdn: msisdn,
                 market: getMarket(msisdn)
@@ -224,7 +225,6 @@ HE.Token = function() {
             url: url + '?backendId=' + HE.getConfig().applicationId,
             type: 'POST',
             data: data,
-            dataType: 'json',
             contentType: 'application/json',
             crossDomain: true,
             headers: function() {
@@ -238,23 +238,62 @@ HE.Token = function() {
                 headers['x-int-opco'] = 'DE';
                 return headers;
             }(),
-            success: function (data) {
-                console.debug('Received token ' + JSON.stringify(data));
+            success: function (data, status, xhr) {
+                if (data) {
+                    console.debug('Received token data ' + JSON.stringify(data));
 
-                if (successCallback) {
-                    successCallback(data);
+                    successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
+                } else if (xhr.getResponseHeader('Location')) {
+                    console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
+
+                    generatePin(xhr.getResponseHeader('Location'), successCallback, errorCallback);
+                } else {
+                    errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
                 }
             },
             error: function (request, status, error) {
-                console.error('Error occurred while getting token from ' + url +
+                var message = 'Error occurred while getting token from ' + url +
                     ', status: ' + status +
-                    ', error: ' + error);
+                    ', error: ' + error;
 
-                if (errorCallback) {
-                    errorCallback(error);
-                }
+                console.error(message);
+
+                errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
             }
         });
+    };
+
+    var generatePin = function(url, successCallback, errorCallback) {
+        $.ajax({
+            url: HE.getConfig().apixHost + url,
+            type: 'GET',
+            headers: function() {
+                var headers = HE.Trace.getHeaders();
+//                application authorization skipped due to required APIX changed (CORS support)
+//                headers['Authorization'] = HE.Apix.getAppToken();
+                return headers;
+            }(),
+            success: function (data) {
+                if (successCallback) {
+                    successCallback(new HE.Result(HE.Result.codes.OTP_SMS_SENT, null, null));
+                }
+            },
+            error: function (request, status, error) {
+                var message = 'Error occurred while getting token from ' + url +
+                    ', status: ' + status +
+                    ', error: ' + error;
+
+                console.error(message);
+
+                if (errorCallback) {
+                    errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
+                }
+            }
+        })
+    };
+
+    var confirmPin = function() {
+
     };
 
     var msisdnValid = function(msisdn) {
@@ -313,3 +352,20 @@ HE.Cookie = function () {
         get: get
     };
 }();
+
+HE.Result = function (code, message, data) {
+    this.code = code;
+    this.message = message;
+    this.data = data;
+};
+
+HE.Result.codes = {
+    ERROR: 'ERROR',
+    IMPROPERLY_CONFIGURED: 'IMPROPERLY_CONFIGURED',
+    THROTTLING_EXCEEDED: 'THROTTLING_EXCEEDED',
+    INVALID_DATA: 'INVALID_DATA',
+    INVALID_MSISDN: 'INVALID_MSISDN',
+    NO_MSISDN_UNDER_HTTPS: 'NO_MSISDN_UNDER_HTTPS',
+    TOKEN_CREATED: 'TOKEN_CREATED',
+    OTP_SMS_SENT: 'OTP_SMS_SENT'
+};
