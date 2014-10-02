@@ -289,7 +289,7 @@ HE.Token = function() {
                     errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
                 }
             }
-        })
+        });
     };
 
     var confirmPin = function() {
