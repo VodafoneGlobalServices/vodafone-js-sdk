@@ -57,15 +57,11 @@ HE = function() {
         }
     };
 
-    var getConfig = function () {
-        return options;
-    };
-
     return {
         init: init,
         getToken: getToken,
         confirmToken: confirmToken,
-        getConfig: getConfig,
+        config: options,
         checkConfig: checkConfig
     };
 }();
@@ -80,13 +76,13 @@ HE.Apix = function() {
             HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'clientAppKey', 'clientAppSecret', 'apixScope']);
 
             $.ajax({
-                url: HE.getConfig().apixAuthUrl,
+                url: HE.config.apixAuthUrl,
                 type: 'POST',
                 async: false,
-                data: 'grant_type=' + HE.getConfig().apixGrantType +
-                    '&client_id=' + HE.getConfig().clientAppKey +
-                    '&client_secret=' + HE.getConfig().clientAppSecret +
-                    '&scope=' + HE.getConfig().apixScope,
+                data: 'grant_type=' + HE.config.apixGrantType +
+                    '&client_id=' + HE.config.clientAppKey +
+                    '&client_secret=' + HE.config.clientAppSecret +
+                    '&scope=' + HE.config.apixScope,
                 headers: HE.Trace.getHeaders(),
                 success: function(data) {
                     console.debug('Received apix auth data ' + JSON.stringify(data));
@@ -94,7 +90,7 @@ HE.Apix = function() {
                     console.info('Set the apix token to ' + appToken);
                 },
                 error: function (request, status, error) {
-                    console.error('Error occurred while getting authentication token at ' + HE.getConfig().apixAuthUrl +
+                    console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
                         ', status: ' + status +
                         ', error: ' + error);
                 }
@@ -111,20 +107,20 @@ HE.Apix = function() {
 
 HE.Throttling = function () {
     var incrementCounter = function () {
-        var throttlingValue = parseInt(HE.Cookie.get(HE.getConfig().throttlingCookieName), 10);
-        var throttlingExpiration = new Date(HE.Cookie.get(HE.getConfig().throttlingCookieExpirationName));
+        var throttlingValue = parseInt(HE.Storage.get(HE.config.throttlingCookieName), 10);
+        var throttlingExpiration = new Date(HE.Storage.get(HE.config.throttlingCookieExpirationName));
 
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
-            if (throttlingValue >= HE.getConfig().throttlingPerPeriodLimit) {
+            if (throttlingValue >= HE.config.throttlingPerPeriodLimit) {
                 throw new Error('Throttling exceeded');
             } else {
-                HE.Cookie.set(HE.getConfig().throttlingCookieName, throttlingValue + 1);
+                HE.Storage.set(HE.config.throttlingCookieName, throttlingValue + 1);
             }
         } else {
             var date = new Date();
-            date.setTime(date.getTime() + (HE.getConfig().throttlingPeriodMinutes * 60 * 1000));
-            HE.Cookie.set(HE.getConfig().throttlingCookieName, 1);
-            HE.Cookie.set(HE.getConfig().throttlingCookieExpirationName, date);
+            date.setTime(date.getTime() + (HE.config.throttlingPeriodMinutes * 60 * 1000));
+            HE.Storage.set(HE.config.throttlingCookieName, 1);
+            HE.Storage.set(HE.config.throttlingCookieExpirationName, date);
         }
     };
 
@@ -138,18 +134,17 @@ HE.Trace = function() {
     var parser = new UAParser();
 
     var getSubjectId = function() {
-        if (HE.getConfig().cookiesAllowed) {
-            if (!HE.Cookie.get(HE.getConfig().subjectIdCookieName)) {
-                HE.Cookie.set(
-                    HE.getConfig().subjectIdCookieName,
+        if (HE.config.cookiesAllowed) {
+            if (!HE.Storage.get(HE.config.subjectIdCookieName)) {
+                HE.Storage.set(
+                    HE.config.subjectIdCookieName,
                     parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
                         parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
-                        fingerprint.get(),
-                    { expires: HE.getConfig().subjectIdCookieExpirationDays }
+                        fingerprint.get()
                 );
             }
 
-            return HE.Cookie.get(HE.getConfig().subjectIdCookieName);
+            return HE.Storage.get(HE.config.subjectIdCookieName);
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
@@ -168,7 +163,7 @@ HE.Trace = function() {
     var getHeaders = function() {
         return {
             'x-vf-trace-subject-region': getUserCountry(),
-            'x-vf-trace-source': HE.getConfig().sdkId + '-' + HE.getConfig().applicationId,
+            'x-vf-trace-source': HE.config.sdkId + '-' + HE.config.applicationId,
             'x-vf-trace-transaction-id': getTransactionId(),
             'x-vf-trace-subject-id': getSubjectId()
         };
@@ -205,7 +200,7 @@ HE.Token = function() {
         HE.checkConfig(['hapResolveUrl']);
 
         callResolver(
-            HE.getConfig().hapResolveUrl,
+            HE.config.hapResolveUrl,
             JSON.stringify({}),
             successCallback, errorCallback
         );
@@ -215,7 +210,7 @@ HE.Token = function() {
         HE.checkConfig(['apixHost', 'apixResolveUrl']);
 
         callResolver(
-            HE.getConfig().apixHost + HE.getConfig().apixResolveUrl,
+            HE.config.apixHost + HE.config.apixResolveUrl,
             JSON.stringify({
                 msisdn: msisdn,
                 market: getMarket(msisdn)
@@ -228,7 +223,7 @@ HE.Token = function() {
         console.info('Getting token from ' + url);
 
         $.ajax({
-            url: url + '?backendId=' + HE.getConfig().applicationId,
+            url: url + '?backendId=' + HE.config.applicationId,
             type: 'POST',
             data: data,
             contentType: 'application/json',
@@ -270,10 +265,10 @@ HE.Token = function() {
     };
 
     var generateCode = function(confirmUrl, successCallback, errorCallback) {
-        HE.Cookie.set(HE.getConfig().tokenConfirmUrlKey, confirmUrl);
+        HE.Storage.set(HE.config.tokenConfirmUrlKey, confirmUrl);
 
         $.ajax({
-            url: HE.getConfig().apixHost + confirmUrl,
+            url: HE.config.apixHost + confirmUrl,
             type: 'GET',
             headers: function() {
                 var headers = HE.Trace.getHeaders();
@@ -301,12 +296,12 @@ HE.Token = function() {
     };
 
     var confirmCode = function(code, successCallback, errorCallback) {
-        var confirmUrl = HE.Cookie.get(HE.getConfig().tokenConfirmUrlKey);
+        var confirmUrl = HE.Storage.get(HE.config.tokenConfirmUrlKey);
 
-        console.info("Sending confirmation code to " + HE.getConfig().apixHost + confirmUrl);
+        console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
 
         $.ajax({
-            url: HE.getConfig().apixHost + confirmUrl,
+            url: HE.config.apixHost + confirmUrl,
             type: 'POST',
             data: JSON.stringify({
                 code: code
@@ -341,7 +336,7 @@ HE.Token = function() {
     };
 
     var msisdnValid = function(msisdn) {
-        var re = new RegExp(HE.getConfig().msisdnValidationPattern);
+        var re = new RegExp(HE.config.msisdnValidationPattern);
 
         if (re.exec(msisdn)) {
             return true;
@@ -352,7 +347,7 @@ HE.Token = function() {
 
     var getMarket = function(msisdn) {
         var countryCode = msisdn.substring(0, 2);
-        return HE.getConfig().markets[countryCode];
+        return HE.config.markets[countryCode];
     };
 
     return {
@@ -361,7 +356,9 @@ HE.Token = function() {
     };
 }();
 
-HE.Cookie = function () {
+HE.Storage = function () {
+    var store = new Persist.Store('js-sdk');
+
     var key = CryptoJS.enc.Hex.parse("000102030405060708090a0b0c0d0e0f");
     var iv = CryptoJS.enc.Hex.parse("101112131415161718191a1b1c1d1e1f");
 
@@ -372,11 +369,7 @@ HE.Cookie = function () {
 
             console.debug("Setting " + name + " under " + encryptedName);
 
-            $.cookie(
-                encryptedName,
-                encryptedValue,
-                options
-            );
+            store.set(encryptedName, encryptedValue);
         }
     };
 
@@ -385,7 +378,7 @@ HE.Cookie = function () {
 
         console.debug("Getting " + name + " under " + encryptedName);
 
-        var value = $.cookie(encryptedName);
+        var value = store.get(encryptedName);
 
         if (value) {
             return decrypt(value);
