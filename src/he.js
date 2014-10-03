@@ -362,7 +362,7 @@ HE.Storage = function () {
     var key = CryptoJS.enc.Hex.parse("000102030405060708090a0b0c0d0e0f");
     var iv = CryptoJS.enc.Hex.parse("101112131415161718191a1b1c1d1e1f");
 
-    var set = function (name, value, options) {
+    var set = function (name, value) {
         if (name && value) {
             var encryptedName = encrypt(name.toString());
             var encryptedValue = encrypt(value.toString());
