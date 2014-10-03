@@ -23,6 +23,11 @@ HE = function() {
         HE.Token.get(msisdn, successCallback, errorCallback);
     };
 
+    var confirmToken = function (successCallback, errorCallback) {
+        HE.Throttling.incrementCounter();
+        HE.Token.confirm(successCallback, errorCallback);
+    };
+
     var getSdkConfig = function() {
         checkConfig(['configurationUrl']);
 
@@ -59,6 +64,7 @@ HE = function() {
     return {
         init: init,
         getToken: getToken,
+        confirmToken: confirmToken,
         getConfig: getConfig,
         checkConfig: checkConfig
     };
@@ -234,8 +240,8 @@ HE.Token = function() {
                 headers.backendScopes = 'seamless_id_user_details_acr_static';
 
 //                the following two headers will be set by HAP in the final solution
-                headers['x-sdp-msisdn'] = '491741863437';
-                headers['x-int-opco'] = 'DE';
+//                headers['x-sdp-msisdn'] = '491741863437';
+//                headers['x-int-opco'] = 'DE';
                 return headers;
             }(),
             success: function (data, status, xhr) {
@@ -246,7 +252,7 @@ HE.Token = function() {
                 } else if (xhr.getResponseHeader('Location')) {
                     console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
 
-                    generatePin(xhr.getResponseHeader('Location'), successCallback, errorCallback);
+                    generateCode(xhr.getResponseHeader('Location'), successCallback, errorCallback);
                 } else {
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
                 }
@@ -263,9 +269,11 @@ HE.Token = function() {
         });
     };
 
-    var generatePin = function(url, successCallback, errorCallback) {
+    var generateCode = function(confirmUrl, successCallback, errorCallback) {
+        HE.Cookie.set(HE.getConfig().tokenConfirmUrlKey, confirmUrl);
+
         $.ajax({
-            url: HE.getConfig().apixHost + url,
+            url: HE.getConfig().apixHost + confirmUrl,
             type: 'GET',
             headers: function() {
                 var headers = HE.Trace.getHeaders();
@@ -273,13 +281,13 @@ HE.Token = function() {
 //                headers['Authorization'] = HE.Apix.getAppToken();
                 return headers;
             }(),
-            success: function (data) {
+            success: function () {
                 if (successCallback) {
                     successCallback(new HE.Result(HE.Result.codes.OTP_SMS_SENT, null, null));
                 }
             },
             error: function (request, status, error) {
-                var message = 'Error occurred while getting token from ' + url +
+                var message = 'Error occurred while getting token from ' + confirmUrl +
                     ', status: ' + status +
                     ', error: ' + error;
 
@@ -292,8 +300,44 @@ HE.Token = function() {
         });
     };
 
-    var confirmPin = function() {
+    var confirmCode = function(code, successCallback, errorCallback) {
+        var confirmUrl = HE.Cookie.get(HE.getConfig().tokenConfirmUrlKey);
 
+        console.info("Sending confirmation code to " + HE.getConfig().apixHost + confirmUrl);
+
+        $.ajax({
+            url: HE.getConfig().apixHost + confirmUrl,
+            type: 'POST',
+            data: JSON.stringify({
+                code: code
+            }),
+            contentType: 'application/json',
+            headers: function() {
+                var headers = HE.Trace.getHeaders();
+//                application authorization skipped due to required APIX changed (CORS support)
+//                headers['Authorization'] = HE.Apix.getAppToken();
+                return headers;
+            }(),
+            success: function (data) {
+                if (data) {
+                    console.debug('Received token data ' + JSON.stringify(data));
+                    successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
+                } else {
+                    errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
+                }
+            },
+            error: function (request, status, error) {
+                var message = 'Error occurred while sending code to ' + confirmUrl +
+                    ', status: ' + status +
+                    ', error: ' + error;
+
+                console.error(message);
+
+                if (errorCallback) {
+                    errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
+                }
+            }
+        });
     };
 
     var msisdnValid = function(msisdn) {
@@ -312,7 +356,8 @@ HE.Token = function() {
     };
 
     return {
-        get: get
+        get: get,
+        confirm: confirmCode
     };
 }();
 
@@ -322,9 +367,14 @@ HE.Cookie = function () {
 
     var set = function (name, value, options) {
         if (name && value) {
+            var encryptedName = encrypt(name.toString());
+            var encryptedValue = encrypt(value.toString());
+
+            console.debug("Setting " + name + " under " + encryptedName);
+
             $.cookie(
-                encrypt(name.toString()),
-                encrypt(value.toString()),
+                encryptedName,
+                encryptedValue,
                 options
             );
         }
@@ -332,6 +382,9 @@ HE.Cookie = function () {
 
     var get = function (name) {
         var encryptedName = encrypt(name);
+
+        console.debug("Getting " + name + " under " + encryptedName);
+
         var value = $.cookie(encryptedName);
 
         if (value) {

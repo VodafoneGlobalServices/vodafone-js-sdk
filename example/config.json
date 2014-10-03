@@ -6,14 +6,16 @@
   "cookiesAllowed": false, 
   "hapResolveUrl": "http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens",
   "markets": {
-    "49": "DE"
-  }, 
-  "msisdnValidationPattern": "^\\d{12}$", 
+    "49": "DE",
+    "40": "RO"
+  },
+  "msisdnValidationPattern": "^\\d+$",
   "sdkId": "js-sdk", 
   "subjectIdCookieExpirationDays": 3650, 
   "subjectIdCookieName": "subjectId", 
   "throttlingCookieExpirationName": "throttlingExpiration", 
-  "throttlingCookieName": "throttlingValue", 
+  "throttlingCookieName": "throttlingValue",
+  "tokenConfirmUrlKey": "tokenConfirmUrl",
   "throttlingPerPeriodLimit": 20, 
   "throttlingPeriodMinutes": 1,
   "apixHost": "http://seamid-4090514559.eu-de1.plex.vodafone.com"
