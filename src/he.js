@@ -41,13 +41,19 @@ HE = function () {
             dataType: 'json',
 
             success: function (data) {
-                console.debug('Received SDK configuration ' + JSON.stringify(data));
+                if (DEBUG) {
+                    console.debug('Received SDK configuration ' + JSON.stringify(data));
+                }
                 for (var key in data) {
                     if (options[key] === undefined) {
                         options[key] = data[key];
-                        console.debug('Added a new key ' + key);
+                        if (DEBUG) {
+                            console.debug('Added a new key ' + key);
+                        }
                     } else {
-                        console.debug('Skipping key ' + key);
+                        if (DEBUG) {
+                            console.debug('Skipping key ' + key);
+                        }
                     }
                 }
             },
@@ -60,11 +66,17 @@ HE = function () {
     };
 
     var _initOptions = function() {
-        if (DEBUG) {
+        if (DEV) {
             options = {
                 configurationUrl: '//localhost/sisdk/config.json'
             };
-        } else {
+        }
+        if (PRE_PROD) {
+            options = {
+                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
+            };
+        }
+        if (PROD) {
             options = {
                 configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
             };
@@ -100,12 +112,21 @@ HE.Apix = function () {
                     '&scope=' + HE.config.apixScope,
                 headers: HE.Trace.getHeaders(),
                 success: function (data) {
-                    console.debug('Received apix auth data ' + JSON.stringify(data));
+                    if (DEBUG) {
+                        console.debug('Received apix auth data ' + JSON.stringify(data));
+                    }
                     appToken = data.token_type + data.access_token;
-                    console.info('Set the apix token to ' + appToken);
+                    if (DEBUG) {
+                        console.info('Set the apix token to ' + appToken);
+                    }
                 },
                 error: function (request, status, error) {
-                    console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
+                    if (DEBUG) {
+                        console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
+                            ', status: ' + status +
+                            ', error: ' + error);
+                    }
+                    throw new Error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
                         ', status: ' + status +
                         ', error: ' + error);
                 }
@@ -201,7 +222,9 @@ HE.Token = function () {
         } else {
             var protocol = window.location.protocol;
 
-            console.debug('Protocol is ' + protocol);
+            if (DEBUG) {
+                console.debug('Protocol is ' + protocol);
+            }
 
             if (protocol === 'http:') {
                 callHap(successCallback, errorCallback);
@@ -236,7 +259,9 @@ HE.Token = function () {
     };
 
     var callResolver = function (url, data, successCallback, errorCallback) {
-        console.info('Getting token from ' + url);
+        if (DEBUG) {
+            console.info('Getting token from ' + url);
+        }
 
         $.ajax({
             url: url + '?backendId=' + HE.config.applicationId,
@@ -256,20 +281,24 @@ HE.Token = function () {
                 return headers;
             }(),
             success: function (data, status, xhr) {
-                console.debug(xhr.getAllResponseHeaders());
-                console.debug(xhr.getResponseHeader('Location'));
-
+                if (DEBUG) {
+                    console.debug(xhr.getAllResponseHeaders());
+                    console.debug(xhr.getResponseHeader('Location'));
+                }
                 if (data) {
-                    console.debug('Received token data ' + JSON.stringify(data));
-
+                    if (DEBUG) {
+                        console.debug('Received token data ' + JSON.stringify(data));
+                    }
                     successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
                 } else if (xhr.getResponseHeader('Location')) {
-                    console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
-
+                    if (DEBUG) {
+                        console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
+                    }
                     generateCode(xhr.getResponseHeader('Location'), successCallback, errorCallback);
                 } else {
-                    console.debug('Error parsing token data ' + JSON.stringify(data));
-
+                    if (DEBUG) {
+                        console.debug('Error parsing token data ' + JSON.stringify(data));
+                    }
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
                 }
             },
@@ -278,8 +307,9 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                console.error(message);
-
+                if (DEBUG) {
+                    console.error(message);
+                }
                 errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
             }
         });
@@ -307,8 +337,9 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                console.error(message);
-
+                if (DEBUG) {
+                    console.error(message);
+                }
                 if (errorCallback) {
                     errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
                 }
@@ -319,8 +350,9 @@ HE.Token = function () {
     var confirmCode = function (code, successCallback, errorCallback) {
         var confirmUrl = HE.Storage.get(HE.config.tokenConfirmUrlKey);
 
-        console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
-
+        if (DEBUG) {
+            console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
+        }
         $.ajax({
             url: HE.config.apixHost + confirmUrl,
             type: 'POST',
@@ -336,7 +368,9 @@ HE.Token = function () {
             }(),
             success: function (data) {
                 if (data) {
-                    console.debug('Received token data ' + JSON.stringify(data));
+                    if (DEBUG) {
+                        console.debug('Received token data ' + JSON.stringify(data));
+                    }
                     successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
                 } else {
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
@@ -347,8 +381,9 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                console.error(message);
-
+                if (DEBUG) {
+                    console.error(message);
+                }
                 if (errorCallback) {
                     errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
                 }
@@ -388,8 +423,9 @@ HE.Storage = function () {
             var encryptedName = encrypt(name.toString());
             var encryptedValue = encrypt(value.toString());
 
-            console.debug("Setting " + name + " under " + encryptedName);
-
+            if (DEBUG) {
+                console.debug("Setting " + name + " under " + encryptedName);
+            }
             store.set(encryptedName, encryptedValue);
         }
     };
@@ -397,8 +433,9 @@ HE.Storage = function () {
     var get = function (name) {
         var encryptedName = encrypt(name);
 
-        console.debug("Getting " + name + " under " + encryptedName);
-
+        if (DEBUG) {
+            console.debug("Getting " + name + " under " + encryptedName);
+        }
         var value = store.get(encryptedName);
 
         if (value) {

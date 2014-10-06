@@ -12,30 +12,53 @@ module.exports = function (grunt) {
         },
         uglify: {
             prod: {
-                src: 'src/he.js',
-                dest: 'dist/vodafone.min.js',
                 options: {
                     compress: {
                         global_defs: {
-                            DEBUG: false
+                            DEBUG: false,
+                            DEV: false,
+                            PRE_PROD: false,
+                            PROD: true
                         },
                         dead_code: true
                     }
-                }
-            },
-            dev: {
+                },
                 src: 'src/he.js',
-                dest: 'dist/vodafone-dev.js',
+                dest: 'dist/vodafone.min.js'
+            },
+            prod_debug: {
                 options: {
                     beautify: true,
                     mangle: false,
                     compress: {
                         global_defs: {
-                            DEBUG: true
+                            DEBUG: true,
+                            DEV: false,
+                            PRE_PROD: false,
+                            PROD: true
                         },
                         dead_code: true
                     }
-                }
+                },
+                src: 'src/he.js',
+                dest: 'dist/vodafone.debug.js'
+            },
+            dev: {
+                options: {
+                    beautify: true,
+                    mangle: false,
+                    compress: {
+                        global_defs: {
+                            DEBUG: true,
+                            DEV: true,
+                            PRE_PROD: false,
+                            PROD: false
+                        },
+                        dead_code: true
+                    }
+                },
+                src: 'src/he.js',
+                dest: 'dist/vodafone.dev.js'
             }
         },
         'serve': {
@@ -65,6 +88,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-plato');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:prod']);
     grunt.registerTask('serve', ['uglify', 'serve']);
 };
