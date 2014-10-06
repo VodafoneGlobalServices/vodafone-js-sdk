@@ -11,12 +11,31 @@ module.exports = function (grunt) {
             options: grunt.file.readJSON('.jshintrc')
         },
         uglify: {
-            options: {
-                banner: '<%= banner %>'
-            },
-            dist: {
+            prod: {
                 src: 'src/he.js',
-                dest: 'dist/he.min.js'
+                dest: 'dist/vodafone.min.js',
+                options: {
+                    compress: {
+                        global_defs: {
+                            DEBUG: false
+                        },
+                        dead_code: true
+                    }
+                }
+            },
+            dev: {
+                src: 'src/he.js',
+                dest: 'dist/vodafone-dev.js',
+                options: {
+                    beautify: true,
+                    mangle: false,
+                    compress: {
+                        global_defs: {
+                            DEBUG: true
+                        },
+                        dead_code: true
+                    }
+                }
             }
         },
         'serve': {
@@ -46,7 +65,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-plato');
 
     // Default task.
-    grunt.registerTask('default', ['uglify', 'serve']);
-    grunt.registerTask('jenkins', ['jshint', 'clean', 'plato', 'uglify']);
-//    grunt.registerTask('jenkins', ['jshint', 'testem', 'clean', 'qunit-cov', 'plato', 'concat', 'uglify']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod']);
+    grunt.registerTask('serve', ['uglify', 'serve']);
 };

@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HE</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+
+    <title>Seamless ID</title>
 </head>
 <body>
 	<h1>Static page with he.js under http</h1>
@@ -14,7 +17,7 @@
     <script src="static/lib/fingerprint/fingerprint.js"></script>
     <script src="static/lib/ua-parser-js/src/ua-parser.min.js"></script>
     <script src="static/lib/persist-js/persist-min.js"></script>
-    <script src="static/he.js"></script>
+    <script src="static/vodafone-dev.js"></script>
     <script>
         function handleResolvedUserData(result) {
             if (result.code === HE.Result.codes.TOKEN_CREATED) {
@@ -42,11 +45,13 @@
             cookiesAllowed: false
         });
 
-        he.getToken(
-            '491741863437',
-            handleResolvedUserData,
-            handleError
-        );
+        setTimeout(function() {
+            he.getToken(
+                '491741863437',
+                handleResolvedUserData,
+                handleError
+            );
+        }, 3000);
     </script>
 </body>
 </html>

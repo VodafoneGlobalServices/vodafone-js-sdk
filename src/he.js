@@ -1,19 +1,15 @@
 HE = window.HE || {};
 
-HE = function() {
-    var options = {
-//        normally this will be retrieved from the configuration service
-        configurationUrl: '//127.0.0.1:9000/example/config.json'
-    };
+HE = function () {
+    var options = {};
 
     var init = function (options_) {
-        getSdkConfig();
+        _initOptions();
+        _getSdkConfig();
 
         for (var key in options_) {
             options[key] = options_[key];
         }
-
-        console.debug('SDK initialized with options: ' + JSON.stringify(options));
 
         return this;
     };
@@ -28,17 +24,31 @@ HE = function() {
         HE.Token.confirm(successCallback, errorCallback);
     };
 
-    var getSdkConfig = function() {
+    var checkConfig = function (mandatoryOptions) {
+        if (!mandatoryOptions.every(function (element, index, array) {
+            return options[element] !== undefined;
+        })) {
+            throw new Error('Improperly configured - ' + mandatoryOptions + ' are mandatory');
+        }
+    };
+
+    var _getSdkConfig = function () {
         checkConfig(['configurationUrl']);
 
         $.ajax({
             url: options.configurationUrl,
             type: 'GET',
-            async: false,
-            success: function(data) {
+            dataType: 'json',
+
+            success: function (data) {
                 console.debug('Received SDK configuration ' + JSON.stringify(data));
                 for (var key in data) {
-                    options[key] = data[key];
+                    if (options[key] === undefined) {
+                        options[key] = data[key];
+                        console.debug('Added a new key ' + key);
+                    } else {
+                        console.debug('Skipping key ' + key);
+                    }
                 }
             },
             error: function (request, status, error) {
@@ -49,11 +59,15 @@ HE = function() {
         });
     };
 
-    var checkConfig = function (mandatoryOptions) {
-        if (!mandatoryOptions.every(function(element, index, array) {
-            return options[element] !== undefined;
-        })) {
-            throw new Error('Improperly configured - ' + mandatoryOptions + ' are mandatory');
+    var _initOptions = function() {
+        if (DEBUG) {
+            options = {
+                configurationUrl: '//localhost/sisdk/config.json'
+            };
+        } else {
+            options = {
+                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
+            };
         }
     };
 
@@ -66,10 +80,10 @@ HE = function() {
     };
 }();
 
-HE.Apix = function() {
+HE.Apix = function () {
     var appToken;
 
-    var getAppToken = function() {
+    var getAppToken = function () {
         if (appToken) {
             return appToken;
         } else {
@@ -85,7 +99,7 @@ HE.Apix = function() {
                     '&client_secret=' + HE.config.clientAppSecret +
                     '&scope=' + HE.config.apixScope,
                 headers: HE.Trace.getHeaders(),
-                success: function(data) {
+                success: function (data) {
                     console.debug('Received apix auth data ' + JSON.stringify(data));
                     appToken = data.token_type + data.access_token;
                     console.info('Set the apix token to ' + appToken);
@@ -130,16 +144,16 @@ HE.Throttling = function () {
     };
 }();
 
-HE.Trace = function() {
+HE.Trace = function () {
     var fingerprint = new Fingerprint();
     var parser = new UAParser();
 
-    var getSubjectId = function() {
+    var getSubjectId = function () {
         if (HE.config.cookiesAllowed) {
             if (!HE.Storage.get(HE.config.subjectIdCookieName)) {
                 HE.Storage.set(
                     HE.config.subjectIdCookieName,
-                    parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
+                        parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
                         parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
                         fingerprint.get()
                 );
@@ -153,16 +167,16 @@ HE.Trace = function() {
             fingerprint.get();
     };
 
-    var getUserCountry = function() {
+    var getUserCountry = function () {
         //FIXME: check the length of this parameter before doing the substring
         return window.navigator.language.substr(3, 5);
     };
 
-    var getTransactionId = function() {
+    var getTransactionId = function () {
         return CryptoJS.MD5((fingerprint.get() + new Date().getMilliseconds()).toString());
     };
 
-    var getHeaders = function() {
+    var getHeaders = function () {
         return {
             'x-vf-trace-subject-region': getUserCountry(),
             'x-vf-trace-source': HE.config.sdkId + '-' + HE.config.applicationId,
@@ -176,8 +190,8 @@ HE.Trace = function() {
     };
 }();
 
-HE.Token = function() {
-    var get = function(msisdn, successCallback, errorCallback) {
+HE.Token = function () {
+    var get = function (msisdn, successCallback, errorCallback) {
         if (msisdn) {
             if (msisdnValid(msisdn)) {
                 callApix(msisdn, successCallback, errorCallback);
@@ -212,7 +226,7 @@ HE.Token = function() {
         HE.checkConfig(['apixHost', 'apixResolveUrl']);
 
         callResolver(
-            HE.config.apixHost + HE.config.apixResolveUrl,
+                HE.config.apixHost + HE.config.apixResolveUrl,
             JSON.stringify({
                 msisdn: msisdn,
                 market: getMarket(msisdn)
@@ -221,7 +235,7 @@ HE.Token = function() {
         );
     };
 
-    var callResolver = function(url, data, successCallback, errorCallback) {
+    var callResolver = function (url, data, successCallback, errorCallback) {
         console.info('Getting token from ' + url);
 
         $.ajax({
@@ -230,7 +244,7 @@ HE.Token = function() {
             data: data,
             contentType: 'application/json',
             crossDomain: true,
-            headers: function() {
+            headers: function () {
                 var headers = HE.Trace.getHeaders();
 //                application authorization skipped due to required APIX changed (CORS support)
 //                headers['Authorization'] = HE.Apix.getAppToken();
@@ -242,6 +256,9 @@ HE.Token = function() {
                 return headers;
             }(),
             success: function (data, status, xhr) {
+                console.debug(xhr.getAllResponseHeaders());
+                console.debug(xhr.getResponseHeader('Location'));
+
                 if (data) {
                     console.debug('Received token data ' + JSON.stringify(data));
 
@@ -251,6 +268,8 @@ HE.Token = function() {
 
                     generateCode(xhr.getResponseHeader('Location'), successCallback, errorCallback);
                 } else {
+                    console.debug('Error parsing token data ' + JSON.stringify(data));
+
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
                 }
             },
@@ -266,13 +285,13 @@ HE.Token = function() {
         });
     };
 
-    var generateCode = function(confirmUrl, successCallback, errorCallback) {
+    var generateCode = function (confirmUrl, successCallback, errorCallback) {
         HE.Storage.set(HE.config.tokenConfirmUrlKey, confirmUrl);
 
         $.ajax({
             url: HE.config.apixHost + confirmUrl,
             type: 'GET',
-            headers: function() {
+            headers: function () {
                 var headers = HE.Trace.getHeaders();
 //                application authorization skipped due to required APIX changed (CORS support)
 //                headers['Authorization'] = HE.Apix.getAppToken();
@@ -297,7 +316,7 @@ HE.Token = function() {
         });
     };
 
-    var confirmCode = function(code, successCallback, errorCallback) {
+    var confirmCode = function (code, successCallback, errorCallback) {
         var confirmUrl = HE.Storage.get(HE.config.tokenConfirmUrlKey);
 
         console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
@@ -309,7 +328,7 @@ HE.Token = function() {
                 code: code
             }),
             contentType: 'application/json',
-            headers: function() {
+            headers: function () {
                 var headers = HE.Trace.getHeaders();
 //                application authorization skipped due to required APIX changed (CORS support)
 //                headers['Authorization'] = HE.Apix.getAppToken();
@@ -337,7 +356,7 @@ HE.Token = function() {
         });
     };
 
-    var msisdnValid = function(msisdn) {
+    var msisdnValid = function (msisdn) {
         var re = new RegExp(HE.config.msisdnValidationPattern);
 
         if (re.exec(msisdn)) {
@@ -347,7 +366,7 @@ HE.Token = function() {
         return false;
     };
 
-    var getMarket = function(msisdn) {
+    var getMarket = function (msisdn) {
         var countryCode = msisdn.substring(0, 2);
         return HE.config.markets[countryCode];
     };

@@ -1,21 +1,21 @@
 {
   "apixAuthUrl": "https://apisit.developer.vodafone.com/2/oauth/access-token",
-  "apixGrantType": "client_credentials", 
+  "apixGrantType": "client_credentials",
   "apixResolveUrl": "/seamless-id/users/tokens",
-  "apixScope": "SSO_OAUTH2_INPUT", 
-  "cookiesAllowed": false, 
+  "apixScope": "SSO_OAUTH2_INPUT",
+  "cookiesAllowed": false,
   "hapResolveUrl": "http://seamid-4090514559.eu-de1.plex.vodafone.com/seamless-id/users/tokens",
   "markets": {
     "49": "DE",
     "40": "RO"
   },
   "msisdnValidationPattern": "^\\d+$",
-  "sdkId": "js-sdk", 
+  "sdkId": "js-sdk",
   "subjectIdCookieName": "subjectId",
-  "throttlingCookieExpirationName": "throttlingExpiration", 
+  "throttlingCookieExpirationName": "throttlingExpiration",
   "throttlingCookieName": "throttlingValue",
   "tokenConfirmUrlKey": "tokenConfirmUrl",
-  "throttlingPerPeriodLimit": 20, 
+  "throttlingPerPeriodLimit": 20,
   "throttlingPeriodMinutes": 1,
   "apixHost": "http://seamid-4090514559.eu-de1.plex.vodafone.com"
 }

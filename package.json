@@ -1,8 +1,8 @@
 {
-  "name": "he-js",
-  "description": "The best project ever.",
+  "name": "SeamlessID",
+  "description": "SeamlessID Javascript SDK",
   "version": "0.1.0",
-  "homepage": "",
+  "homepage": "http://www.vodafone.com",
   "author": {
     "name": "Kamil Chudy",
     "email": "kam.chudy@gmail.com"
