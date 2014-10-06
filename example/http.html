@@ -2,38 +2,51 @@
 <html>
 <head>
     <title>HE</title>
+</head>
+<body>
+	<h1>Static page with he.js under http</h1>
+    <h3>Status: <span id="status"></span></h3>
+    <h3 id="confirmation" style="display: none;">Confirmation: <input id="pin" type="text" placeholder="PIN"><button id="pin-confirm">Confirm</button></h3>
+
     <script src="static/lib/jquery/dist/jquery.min.js"></script>
-    <script src="static/lib/jquery-cookie/jquery.cookie.js"></script>
     <script src="static/lib/crypto-js/rollups/md5.js"></script>
     <script src="static/lib/crypto-js/rollups/rabbit.js"></script>
     <script src="static/lib/fingerprint/fingerprint.js"></script>
     <script src="static/lib/ua-parser-js/src/ua-parser.min.js"></script>
+    <script src="static/lib/persist-js/persist-min.js"></script>
     <script src="static/he.js"></script>
-
     <script>
-        function handleResolvedUserData(data) {
-            console.log('Received token: ' + data.tokenId);
-            $('#token').text(data.tokenId);
+        function handleResolvedUserData(result) {
+            if (result.code === HE.Result.codes.TOKEN_CREATED) {
+                $('#status').text('Received token ' + result.data.tokenId);
+            } else if (result.code === HE.Result.codes.OTP_SMS_SENT) {
+                $('#status').text('PIN sent to the given MSISDN');
+                $('#confirmation').show();
+            } else {
+                $('#status').text('Unsupported result');
+            }
         }
 
-        function handleError(err) {
-            console.error('Caught an error: ' + err);
+        function handleError(result) {
+            $('#status').text('Caught an error: ' + result.code + ' ' + result.message);
         }
 
-        HE.init({
+        $('#pin-confirm').click(function() {
+            he.confirmToken($("#pin").val(), handleResolvedUserData, handleError);
+        });
+
+        var he = HE.init({
             applicationId: 'curlscript',
             clientAppKey: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
             clientAppSecret: 'k4l1RXZGqMnw2cD8',
-            cookiesAllowed: true
-        }).getToken(
-            null,
+            cookiesAllowed: false
+        });
+
+        he.getToken(
+            '491741863437',
             handleResolvedUserData,
             handleError
         );
     </script>
-</head>
-<body>
-	<h1>Static page with he.js under http</h1>
-    <h3>Received token: <span id="token"></span></h3>
 </body>
 </html>

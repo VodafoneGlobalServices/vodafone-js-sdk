@@ -23,9 +23,9 @@
   ],
   "dependencies": {
     "jquery": "~2.1.1",
-    "jquery-cookie": "~1.4.1",
     "crypto-js": "https://crypto-js.googlecode.com/files/CryptoJS%20v3.1.2.zip",
     "fingerprint": "~0.5.4",
-    "ua-parser-js": "~0.7.0"
+    "ua-parser-js": "~0.7.0",
+    "persist-js": "git://github.com/jeremydurham/persist-js.git#~0.3.0"
   }
 }
