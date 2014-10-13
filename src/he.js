@@ -2,16 +2,22 @@ HE = window.HE || {};
 
 HE = function () {
     var options = {};
+    var initialized = false;
 
     var init = function (options_) {
+        console.debug("Invoking init");
+
+        if (initialized) {
+            console.log("Already initialized. Returning.");
+            return;
+        }
+
         _initOptions();
         _getSdkConfig();
 
         for (var key in options_) {
             options[key] = options_[key];
         }
-
-        return this;
     };
 
     var getToken = function (msisdn, successCallback, errorCallback) {
@@ -41,21 +47,17 @@ HE = function () {
             dataType: 'json',
 
             success: function (data) {
-                if (DEBUG) {
-                    console.debug('Received SDK configuration ' + JSON.stringify(data));
-                }
+                console.debug('Received SDK configuration');
+                console.debug(JSON.stringify(data, undefined, 2));
                 for (var key in data) {
                     if (options[key] === undefined) {
                         options[key] = data[key];
-                        if (DEBUG) {
-                            console.debug('Added a new key ' + key);
-                        }
+                        console.debug('Added a new key ' + key);
                     } else {
-                        if (DEBUG) {
-                            console.debug('Skipping key ' + key);
-                        }
+                        console.debug('Skipping key ' + key);
                     }
                 }
+                initialized = true;
             },
             error: function (request, status, error) {
                 throw new Error('Error occurred while getting configuration at ' + options.configurationUrl +
@@ -65,7 +67,7 @@ HE = function () {
         });
     };
 
-    var _initOptions = function() {
+    var _initOptions = function () {
         if (DEV) {
             options = {
                 configurationUrl: '//localhost/sisdk/config.json'
@@ -112,20 +114,14 @@ HE.Apix = function () {
                     '&scope=' + HE.config.apixScope,
                 headers: HE.Trace.getHeaders(),
                 success: function (data) {
-                    if (DEBUG) {
-                        console.debug('Received apix auth data ' + JSON.stringify(data));
-                    }
+                    console.debug('Received apix auth data ' + JSON.stringify(data));
                     appToken = data.token_type + data.access_token;
-                    if (DEBUG) {
-                        console.info('Set the apix token to ' + appToken);
-                    }
+                    console.info('Set the apix token to ' + appToken);
                 },
                 error: function (request, status, error) {
-                    if (DEBUG) {
-                        console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
-                            ', status: ' + status +
-                            ', error: ' + error);
-                    }
+                    console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
+                        ', status: ' + status +
+                        ', error: ' + error);
                     throw new Error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
                         ', status: ' + status +
                         ', error: ' + error);
@@ -222,9 +218,7 @@ HE.Token = function () {
         } else {
             var protocol = window.location.protocol;
 
-            if (DEBUG) {
-                console.debug('Protocol is ' + protocol);
-            }
+            console.debug('Protocol is ' + protocol);
 
             if (protocol === 'http:') {
                 callHap(successCallback, errorCallback);
@@ -259,9 +253,7 @@ HE.Token = function () {
     };
 
     var callResolver = function (url, data, successCallback, errorCallback) {
-        if (DEBUG) {
-            console.info('Getting token from ' + url);
-        }
+        console.info('Getting token from ' + url);
 
         $.ajax({
             url: url + '?backendId=' + HE.config.applicationId,
@@ -282,24 +274,16 @@ HE.Token = function () {
                 return headers;
             }(),
             success: function (data, status, xhr) {
-                if (DEBUG) {
-                    console.debug(xhr.getAllResponseHeaders());
-                    console.debug(xhr.getResponseHeader('Location'));
-                }
+                console.debug(xhr.getAllResponseHeaders());
+                console.debug(xhr.getResponseHeader('Location'));
                 if (data) {
-                    if (DEBUG) {
-                        console.debug('Received token data ' + JSON.stringify(data));
-                    }
+                    console.debug('Received token data ' + JSON.stringify(data));
                     successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
                 } else if (xhr.getResponseHeader('Location')) {
-                    if (DEBUG) {
-                        console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
-                    }
+                    console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
                     generateCode(xhr.getResponseHeader('Location'), successCallback, errorCallback);
                 } else {
-                    if (DEBUG) {
-                        console.debug('Error parsing token data ' + JSON.stringify(data));
-                    }
+                    console.debug('Error parsing token data ' + JSON.stringify(data));
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
                 }
             },
@@ -308,9 +292,7 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                if (DEBUG) {
-                    console.error(message);
-                }
+                console.error(message);
                 errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
             }
         });
@@ -339,9 +321,7 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                if (DEBUG) {
-                    console.error(message);
-                }
+                console.error(message);
                 if (errorCallback) {
                     errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
                 }
@@ -352,9 +332,7 @@ HE.Token = function () {
     var confirmCode = function (code, successCallback, errorCallback) {
         var confirmUrl = HE.Storage.get(HE.config.tokenConfirmUrlKey);
 
-        if (DEBUG) {
-            console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
-        }
+        console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
         $.ajax({
             url: HE.config.apixHost + confirmUrl,
             type: 'POST',
@@ -371,9 +349,7 @@ HE.Token = function () {
             }(),
             success: function (data) {
                 if (data) {
-                    if (DEBUG) {
-                        console.debug('Received token data ' + JSON.stringify(data));
-                    }
+                    console.debug('Received token data ' + JSON.stringify(data));
                     successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
                 } else {
                     errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
@@ -384,9 +360,7 @@ HE.Token = function () {
                     ', status: ' + status +
                     ', error: ' + error;
 
-                if (DEBUG) {
-                    console.error(message);
-                }
+                console.error(message);
                 if (errorCallback) {
                     errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
                 }
@@ -426,9 +400,7 @@ HE.Storage = function () {
             var encryptedName = encrypt(name.toString());
             var encryptedValue = encrypt(value.toString());
 
-            if (DEBUG) {
-                console.debug("Setting " + name + " under " + encryptedName);
-            }
+            console.debug("Setting " + name + " under " + encryptedName);
             store.set(encryptedName, encryptedValue);
         }
     };
@@ -436,9 +408,7 @@ HE.Storage = function () {
     var get = function (name) {
         var encryptedName = encrypt(name);
 
-        if (DEBUG) {
-            console.debug("Getting " + name + " under " + encryptedName);
-        }
+        console.debug("Getting " + name + " under " + encryptedName);
         var value = store.get(encryptedName);
 
         if (value) {
@@ -468,6 +438,7 @@ HE.Result = function (code, message, data) {
 
 HE.Result.codes = {
     ERROR: 'ERROR',
+    UNABLE_TO_RESOLVE: 'Unable to resolve',
     IMPROPERLY_CONFIGURED: 'IMPROPERLY_CONFIGURED',
     THROTTLING_EXCEEDED: 'THROTTLING_EXCEEDED',
     INVALID_DATA: 'INVALID_DATA',

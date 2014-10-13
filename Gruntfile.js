@@ -1,7 +1,59 @@
 'use strict';
 
-module.exports = function (grunt) {
+var PROD = {
+    options: {
+        compress: {
+            global_defs: {
+                DEBUG: false,
+                DEV: false,
+                PRE_PROD: false,
+                PROD: true
+            },
+            dead_code: true,
+            drop_console: true
+        }
+    },
+    src: 'src/he.js',
+    dest: 'dist/vodafone.min.js'
+};
+var PROD_DEBUG = {
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DEBUG: true,
+                DEV: false,
+                PRE_PROD: false,
+                PROD: true
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    },
+    src: 'src/he.js',
+    dest: 'dist/vodafone.debug.js'
+};
+var DEV = {
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DEBUG: true,
+                DEV: true,
+                PRE_PROD: false,
+                PROD: false
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    },
+    src: 'src/he.js',
+    dest: 'dist/vodafone.dev.js'
+};
 
+module.exports = function (grunt) {
     // Project configuration.
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
@@ -29,55 +81,9 @@ module.exports = function (grunt) {
             options: grunt.file.readJSON('.jshintrc')
         },
         uglify: {
-            prod: {
-                options: {
-                    compress: {
-                        global_defs: {
-                            DEBUG: false,
-                            DEV: false,
-                            PRE_PROD: false,
-                            PROD: true
-                        },
-                        dead_code: true
-                    }
-                },
-                src: 'src/he.js',
-                dest: 'dist/vodafone.min.js'
-            },
-            prod_debug: {
-                options: {
-                    beautify: true,
-                    mangle: false,
-                    compress: {
-                        global_defs: {
-                            DEBUG: true,
-                            DEV: false,
-                            PRE_PROD: false,
-                            PROD: true
-                        },
-                        dead_code: true
-                    }
-                },
-                src: 'src/he.js',
-                dest: 'dist/vodafone.debug.js'
-            },
-            dev: {
-                options: {
-                    beautify: true,
-                    mangle: false,
-                    compress: {
-                        global_defs: {
-                            DEBUG: true,
-                            DEV: true,
-                            PRE_PROD: false,
-                            PROD: false
-                        },
-                        dead_code: true
-                    }
-                },
-                src: 'src/he.js',
-                dest: 'dist/vodafone.dev.js'
-            }
+            prod: PROD,
+            prod_debug: PROD_DEBUG,
+            dev: DEV
         },
         'serve': {
             'path': 'example/'
@@ -92,6 +98,12 @@ module.exports = function (grunt) {
                     'dist/metrics': [ 'src/*.js' ]
                 }
             }
+        },
+        copy: {
+            main: {
+                src: 'dist/*.js',
+                dest: 'example/static/',
+            }
         }
     });
 
@@ -105,8 +117,9 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-testem');
     grunt.loadNpmTasks('grunt-qunit-cov');
     grunt.loadNpmTasks('grunt-plato');
+    grunt.loadNpmTasks('grunt-contrib-copy');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:prod']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:prod', 'copy']);
     grunt.registerTask('serve', ['uglify', 'serve']);
 };

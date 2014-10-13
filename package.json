@@ -34,7 +34,8 @@
     "grunt-contrib-nodeunit": "~0.2.0",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-watch": "~0.4.0",
-    "grunt-serve": "^0.1.6"
+    "grunt-serve": "^0.1.6",
+    "grunt-contrib-copy": "~0.6.0"
   },
   "keywords": []
 }
