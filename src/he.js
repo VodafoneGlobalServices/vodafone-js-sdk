@@ -271,13 +271,14 @@ HE.Token = function () {
             crossDomain: true,
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-//                application authorization skipped due to required APIX changed (CORS support)
-//                headers['Authorization'] = HE.Apix.getAppToken();
+                if (PRE_PROD || PROD) {
+                    headers.Authorization = HE.Apix.getAppToken();
+                }
                 headers.backendScopes = 'seamless_id_user_details_acr_static';
-
-//                the following two headers will be set by HAP in the final solution
-//                headers['x-sdp-msisdn'] = '491741863437';
-//                headers['x-int-opco'] = 'DE';
+                if (DEV) {
+                    headers['x-sdp-msisdn'] = '491628133947';
+                    headers['x-int-opco'] = 'DE';
+                }
                 return headers;
             }(),
             success: function (data, status, xhr) {
@@ -323,8 +324,9 @@ HE.Token = function () {
             type: 'GET',
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-//                application authorization skipped due to required APIX changed (CORS support)
-//                headers['Authorization'] = HE.Apix.getAppToken();
+                if (PRE_PROD || PROD) {
+                    headers.Authorization = HE.Apix.getAppToken();
+                }
                 return headers;
             }(),
             success: function () {
@@ -362,8 +364,9 @@ HE.Token = function () {
             contentType: 'application/json',
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-//                application authorization skipped due to required APIX changed (CORS support)
-//                headers['Authorization'] = HE.Apix.getAppToken();
+                if (PRE_PROD || PROD) {
+                    headers.Authorization = HE.Apix.getAppToken();
+                }
                 return headers;
             }(),
             success: function (data) {
@@ -470,6 +473,6 @@ HE.Result.codes = {
     INVALID_DATA: 'INVALID_DATA',
     INVALID_MSISDN: 'INVALID_MSISDN',
     NO_MSISDN_UNDER_HTTPS: 'NO_MSISDN_UNDER_HTTPS',
-    TOKEN_CREATED: 'TOKEN_CREATED',
+    TOKEN_CREATED: 'VDFResolutionStatusCompleted',
     OTP_SMS_SENT: 'OTP_SMS_SENT'
 };
