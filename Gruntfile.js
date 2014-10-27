@@ -1,31 +1,35 @@
 'use strict';
 
+var ENVIRONMENT = {
+    PROD: 'PROD',
+    PRE_PROD: 'PRE-PROD',
+    DEV: 'DEV',
+    ASLAU: 'ASLAU'
+}
+
 var PROD = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.min.js',
     options: {
         compress: {
             global_defs: {
-                DEBUG: false,
-                DEV: false,
-                PRE_PROD: false,
-                PROD: true
+                DIRECT: false,
+                ENV: ENVIRONMENT.PROD
             },
             dead_code: true,
             drop_console: true
         }
-    },
-    src: 'src/he.js',
-    dest: 'dist/vodafone.min.js'
+    }
 };
+
 var PROD_DEBUG = {
     options: {
         beautify: true,
         mangle: false,
         compress: {
             global_defs: {
-                DEBUG: true,
-                DEV: false,
-                PRE_PROD: false,
-                PROD: true
+                DIRECT: false,
+                ENV: ENVIRONMENT.PROD
             },
             dead_code: true,
             drop_console: false
@@ -34,16 +38,62 @@ var PROD_DEBUG = {
     src: 'src/he.js',
     dest: 'dist/vodafone.debug.js'
 };
+
+var PRE_PROD_DIRECT = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.pre.direct.js',
+    options: {
+        compress: {
+            global_defs: {
+                DIRECT: true,
+                ENV: ENVIRONMENT.PRE_PROD
+            },
+            dead_code: true,
+            drop_console: true
+        }
+    }
+};
+
+var PRE_PROD = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.pre.js',
+    options: {
+        compress: {
+            global_defs: {
+                DIRECT: false,
+                ENV: ENVIRONMENT.PRE_PROD
+            },
+            dead_code: true,
+            drop_console: true
+        }
+    }
+};
+
+var PRE_PROD_DEBUG = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.pre.debug.js',
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DIRECT: false,
+                ENV: ENVIRONMENT.ASLAU
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    }
+};
+
 var DEV = {
     options: {
         beautify: true,
         mangle: false,
         compress: {
             global_defs: {
-                DEBUG: true,
-                DEV: true,
-                PRE_PROD: false,
-                PROD: false
+                DIRECT: true,
+                ENV: ENVIRONMENT.DEV
             },
             dead_code: true,
             drop_console: false
@@ -83,6 +133,9 @@ module.exports = function (grunt) {
         uglify: {
             prod: PROD,
             prod_debug: PROD_DEBUG,
+            pre_prod: PRE_PROD,
+            pre_prod_debug: PRE_PROD_DEBUG,
+            pre_prod_direct: PRE_PROD_DIRECT,
             dev: DEV
         },
         'serve': {
@@ -120,6 +173,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:prod', 'copy']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:pre_prod_direct', 'uglify:pre_prod_debug', 'uglify:prod', 'copy']);
     grunt.registerTask('serve', ['uglify', 'serve']);
 };

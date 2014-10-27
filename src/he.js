@@ -4,30 +4,43 @@ HE = function () {
     var options = {};
     var initialized = false;
 
-    var init = function (options_) {
-        console.debug("Invoking init");
+    var init = function (mOptions, mInitCallback) {
+        console.debug("init");
+        console.debug(JSON.stringify(mOptions, undefined, 2));
 
         if (initialized) {
-            console.log("Already initialized. Returning.");
+            console.info("Already initialized.");
+            mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, undefined, undefined));
             return;
         }
 
-        _initOptions();
-        _getSdkConfig();
-
-        for (var key in options_) {
-            options[key] = options_[key];
+        try {
+            _initOptions();
+            _getAndMergeSdkConfig(mOptions, mInitCallback);
+        } catch (e) {
+            console.error("Error occurred");
+            console.error(JSON.stringify(e, undefined, 2));
         }
     };
 
     var getToken = function (msisdn, successCallback, errorCallback) {
-        HE.Throttling.incrementCounter();
-        HE.Token.get(msisdn, successCallback, errorCallback);
+        try {
+            _checkInitialization();
+            HE.Throttling.incrementCounter();
+            HE.Token.get(msisdn, successCallback, errorCallback);
+        } catch (e) {
+            errorCallback(new HE.Result(HE.Result.codes.ERROR, e.message, undefined));
+        }
     };
 
     var confirmToken = function (successCallback, errorCallback) {
-        HE.Throttling.incrementCounter();
-        HE.Token.confirm(successCallback, errorCallback);
+        try {
+            _checkInitialization();
+            HE.Throttling.incrementCounter();
+            HE.Token.confirm(successCallback, errorCallback);
+        } catch (e) {
+            errorCallback(new HE.Result(HE.Result.codes.ERROR, e.message, undefined));
+        }
     };
 
     var checkConfig = function (mandatoryOptions) {
@@ -38,8 +51,46 @@ HE = function () {
         }
     };
 
-    var _getSdkConfig = function () {
+    var _checkInitialization = function () {
+        if (!initialized) {
+            throw new Error("SDK not initialized");
+        }
+    };
+
+    var _initOptions = function () {
+        console.info("Initializing options");
+        if (ENV == 'ASLAU') {
+            console.info("Using environment ASLAU");
+            options = {
+                configurationUrl: 'http://aslau.com/config.json'
+            };
+        }
+        if (ENV == 'DEV') {
+            console.info("Using environment DEV");
+            options = {
+                configurationUrl: '//localhost/sisdk/config.json'
+            };
+        }
+        if (ENV == 'PRE_PROD') {
+            console.info("Using environment PRE_PROD");
+            options = {
+                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
+            };
+        }
+        if (ENV == 'PROD') {
+            console.info("Using environment PROD");
+            options = {
+                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
+            };
+        }
+    };
+
+    var _getAndMergeSdkConfig = function (_options, mInitCallback) {
         checkConfig(['configurationUrl']);
+
+        for (var key in _options) {
+            options[key] = _options[key];
+        }
 
         $.ajax({
             url: options.configurationUrl,
@@ -52,41 +103,26 @@ HE = function () {
                 for (var key in data) {
                     if (options[key] === undefined) {
                         options[key] = data[key];
-                        console.debug('Added a new key ' + key);
-                    } else {
-                        console.debug('Skipping key ' + key);
                     }
                 }
                 initialized = true;
+                console.info('Initialisation done');
+                console.debug(JSON.stringify(options, undefined, 2));
             },
             error: function (request, status, error) {
-                throw new Error('Error occurred while getting configuration at ' + options.configurationUrl +
-                    ', status: ' + status +
-                    ', error: ' + error);
+                var errorData = {
+                    configUrl: options.configurationUrl,
+                    status: status,
+                    error: error
+                };
+                mInitCallback(new HE.Result(HE.Result.codes.ERROR, "Error while retrieving configuration", errorData));
             }
         });
     };
 
-    var _initOptions = function () {
-        if (DEV) {
-            options = {
-                configurationUrl: '//localhost/sisdk/config.json'
-            };
-        }
-        if (PRE_PROD) {
-            options = {
-                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
-            };
-        }
-        if (PROD) {
-            options = {
-                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
-            };
-        }
-    };
-
     return {
         init: init,
+        initialized: initialized,
         getToken: getToken,
         confirmToken: confirmToken,
         config: options,
@@ -263,11 +299,11 @@ HE.Token = function () {
             crossDomain: true,
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-                if (PRE_PROD || PROD) {
+                if (!DIRECT) {
                     headers.Authorization = HE.Apix.getAppToken();
                 }
                 headers.backendScopes = 'seamless_id_user_details_acr_static';
-                if (DEV) {
+                if (DIRECT) {
                     headers['x-sdp-msisdn'] = '491628133947';
                     headers['x-int-opco'] = 'DE';
                 }
@@ -306,7 +342,7 @@ HE.Token = function () {
             type: 'GET',
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-                if (PRE_PROD || PROD) {
+                if (!DIRECT) {
                     headers.Authorization = HE.Apix.getAppToken();
                 }
                 return headers;
@@ -342,7 +378,7 @@ HE.Token = function () {
             contentType: 'application/json',
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-                if (PRE_PROD || PROD) {
+                if (!DIRECT) {
                     headers.Authorization = HE.Apix.getAppToken();
                 }
                 return headers;
@@ -438,7 +474,9 @@ HE.Result = function (code, message, data) {
 
 HE.Result.codes = {
     ERROR: 'ERROR',
+    INITIALIZED: 'Initialized',
     UNABLE_TO_RESOLVE: 'Unable to resolve',
+
     IMPROPERLY_CONFIGURED: 'IMPROPERLY_CONFIGURED',
     THROTTLING_EXCEEDED: 'THROTTLING_EXCEEDED',
     INVALID_DATA: 'INVALID_DATA',

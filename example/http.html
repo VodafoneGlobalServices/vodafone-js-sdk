@@ -12,7 +12,7 @@
     <script src="static/lib/fingerprint/fingerprint.js"></script>
     <script src="static/lib/ua-parser-js/src/ua-parser.min.js"></script>
     <script src="static/lib/persist-js/persist-min.js"></script>
-    <script src="static/dist/vodafone.dev.js"></script>
+    <script src="static/dist/vodafone.pre.debug.js"></script>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
@@ -57,28 +57,28 @@
                     <label for="clientId" class="control-label col-xs-3">Client ID</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="clientId">
+                        <input type="text" class="form-control" id="clientId" value="l8d0ESc5vk5vHlOosrPaAxqYANKR2KSH"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
                     <label for="clientSecret" class="control-label col-xs-3">Client Secret</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="clientSecret">
+                        <input type="text" class="form-control" id="clientSecret" value="oRwUAwm9R9CT5Xx1"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
                     <label for="backendId" class="control-label col-xs-3">Backend ID</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="backendId">
+                        <input type="text" class="form-control" id="backendId" value="WCejf6WmXCw7fK07HzWMbTtJyYuEfQwc"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
                     <label for="msisdn" class="control-label col-xs-3">MSISDN</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="msisdn">
+                        <input type="text" class="form-control" id="msisdn" value="">
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -141,22 +141,30 @@
                 clientAppKey: $("#clientId").val(),
                 clientAppSecret: $("#clientSecret").val()
             };
-            HE.init();
+            HE.init(initParameters, initCallback);
         });
         $("#getTokenButton").click(function () {
-            HE.getToken();
+            var msisdn = $("#msisdn").val();
+            HE.getToken(msisdn, successCallback, errorCallback);
         });
         $("#confirmTokenButton").click(function () {
             HE.confirmToken();
         });
     });
 
-    var successCallback = function () {
-
+    var successCallback = function (heResult) {
+        console.info("Success callback");
+        console.info(JSON.stringify(heResult, undefined, 2));
     };
 
-    var errorCallback = function () {
+    var errorCallback = function (heResult) {
+        console.error("Error callback");
+        console.error(JSON.stringify(heResult, undefined, 2));
+    };
 
+    var initCallback = function(heResult) {
+        console.info("Init callback");
+        console.info(JSON.stringify(heResult, undefined, 2));
     };
     //    function handleResolvedUserData(result) {
     //        if (result.code === HE.Result.codes.TOKEN_CREATED) {
