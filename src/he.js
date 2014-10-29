@@ -1,22 +1,19 @@
 HE = window.HE || {};
 
-HE = function () {
-    var options = {};
-    var initialized = false;
-
+HE = (function () {
     var init = function (mOptions, mInitCallback) {
-        console.debug("init");
-        console.debug(JSON.stringify(mOptions, undefined, 2));
-
-        if (initialized) {
+        if (HE.Configuration.isInitialized() && HE.Apix.isIntialized()) {
             console.info("Already initialized.");
             mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, undefined, undefined));
             return;
         }
 
         try {
-            _initOptions();
-            _getAndMergeSdkConfig(mOptions, mInitCallback);
+            HE.Configuration.init(mOptions, function(result) {
+                if (result.code === HE.Result.codes.INITIALIZED) {
+                    HE.Apix.init(mInitCallback);
+                }
+            });
         } catch (e) {
             console.error("Error occurred");
             console.error(JSON.stringify(e, undefined, 2));
@@ -43,57 +40,94 @@ HE = function () {
         }
     };
 
-    var checkConfig = function (mandatoryOptions) {
-        if (!mandatoryOptions.every(function (element, index, array) {
-            return options[element] !== undefined;
-        })) {
-            throw new Error('Improperly configured - ' + mandatoryOptions + ' are mandatory');
-        }
-    };
-
     var _checkInitialization = function () {
-        if (!initialized) {
+        if (!HE.Configuration.isInitialized()) {
             throw new Error("SDK not initialized");
         }
     };
 
-    var _initOptions = function () {
+    return {
+        init: init,
+        getToken: getToken,
+        confirmToken: confirmToken
+    };
+})();
+
+HE.Configuration = function() {
+    var initialized = false;
+    var configuration = {};
+
+    var init = function (mOptions, mInitCallback) {
+        console.debug("init");
+        console.debug(JSON.stringify(mOptions, undefined, 2));
+
+        if (initialized) {
+            console.info("Already initialized.");
+            mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, undefined, undefined));
+            return;
+        }
+
+        try {
+            _initDefaults();
+            _getAndMergeSdkConfig(mOptions, mInitCallback);
+        } catch (e) {
+            console.error("Error occurred");
+            console.error(JSON.stringify(e, undefined, 2));
+        }
+    };
+
+    var getProperty = function(property, defaultValue) {
+        //FIXME: check the string before eval as it can be a security issue
+        var value = eval("configuration." + property); // jshint ignore:line
+        if (value === undefined) {
+            if (defaultValue === undefined) {
+                console.error("Property " + property + " is undefined");
+                throw new Error('Improperly configured - ' + property + ' is not defined');
+            } else {
+                value = defaultValue;
+            }
+        }
+
+        console.debug("configuration[" +property+ "]=" + value);
+        return  value;
+    };
+
+    var isInitialized = function() {
+        return initialized;
+    };
+
+    var _initDefaults = function () {
+        configuration.sdkId = "SeamlessIdJsSdk";
+        configuration.cookiesAllowed = true;
+        configuration.subjectIdCookieName = "subjectCookie";
+        configuration.tokenConfirmUrlKey = "otpConfirmUrl";
+
         console.info("Initializing options");
         if (ENV == 'ASLAU') {
             console.info("Using environment ASLAU");
-            options = {
-                configurationUrl: 'http://aslau.com/config.json'
-            };
+            configuration.configurationUrl = "http://aslau.com/config.json";
         }
         if (ENV == 'DEV') {
             console.info("Using environment DEV");
-            options = {
-                configurationUrl: '//localhost/sisdk/config.json'
-            };
+            configuration.configurationUrl = "http//localhost/sisdk/config.json";
         }
         if (ENV == 'PRE_PROD') {
             console.info("Using environment PRE_PROD");
-            options = {
-                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
-            };
+            configuration.configurationUrl = "https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json";
         }
         if (ENV == 'PROD') {
             console.info("Using environment PROD");
-            options = {
-                configurationUrl: 'https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json'
-            };
+            configuration.configurationUrl = "https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json";
         }
     };
 
     var _getAndMergeSdkConfig = function (_options, mInitCallback) {
-        checkConfig(['configurationUrl']);
-
         for (var key in _options) {
-            options[key] = _options[key];
+            configuration[key] = _options[key];
         }
 
         $.ajax({
-            url: options.configurationUrl,
+            url: configuration.configurationUrl,
             type: 'GET',
             dataType: 'json',
 
@@ -101,17 +135,22 @@ HE = function () {
                 console.debug('Received SDK configuration');
                 console.debug(JSON.stringify(data, undefined, 2));
                 for (var key in data) {
-                    if (options[key] === undefined) {
-                        options[key] = data[key];
+                    if (configuration[key] === undefined) {
+                        configuration[key] = data[key];
                     }
                 }
+
+                _calculateCompoundProperties();
+
                 initialized = true;
-                console.info('Initialisation done');
-                console.debug(JSON.stringify(options, undefined, 2));
+                console.info('Configuration initialisation done');
+                console.debug(JSON.stringify(configuration, undefined, 2));
+
+                mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, "SDK configuration initialized", data));
             },
             error: function (request, status, error) {
                 var errorData = {
-                    configUrl: options.configurationUrl,
+                    configUrl: configuration.configurationUrl,
                     status: status,
                     error: error
                 };
@@ -120,75 +159,93 @@ HE = function () {
         });
     };
 
+    var _calculateCompoundProperties = function() {
+        configuration.hapResolveAbsoluteUrl = configuration.hap.protocol + "://" + configuration.hap.host + configuration.basePath;
+        configuration.apixAuthAbsoluteUrl = configuration.apix.protocol + "://" + configuration.apix.host + configuration.apix.oAuthTokenPath;
+        if (DIRECT) {
+            configuration.apixBaseUrl = "http://SeamId-4090514559.eu-de1.plex.vodafone.com";
+            configuration.apixResolveAbsoluteUrl = "http://SeamId-4090514559.eu-de1.plex.vodafone.com" + configuration.basePath;
+        } else {
+            configuration.apixBaseUrl = configuration.apix.protocol + "://" + configuration.apix.host;
+            configuration.apixResolveAbsoluteUrl = configuration.apix.protocol + "://" + configuration.apix.host + configuration.basePath;
+        }
+    };
+
     return {
         init: init,
-        initialized: initialized,
-        getToken: getToken,
-        confirmToken: confirmToken,
-        config: options,
-        checkConfig: checkConfig
+        getProperty: getProperty,
+        isInitialized: isInitialized
     };
 }();
 
 HE.Apix = function () {
     var appToken;
+    var initialized = false;
+
+    var init = function(mInitCallback) {
+        console.debug("oAuth token NOT set. Retrieving it from APIX");
+        var apixAuthUrl = HE.Configuration.getProperty("apixAuthAbsoluteUrl");
+        $.ajax({
+            url: apixAuthUrl,
+            type: 'POST',
+            //FIXME: use callbacks instead of async: false which is not supported for cross domain requests.
+//                async: false,
+            data: 'grant_type=' + HE.Configuration.getProperty("apix.oAuthTokenGrantType") +
+                '&client_id=' + HE.Configuration.getProperty("clientAppKey") +
+                '&client_secret=' + HE.Configuration.getProperty("clientAppSecret") +
+                '&scope=' + HE.Configuration.getProperty("apix.oAuthTokenScope"),
+            success: function (data) {
+                console.debug('Received apix auth data ' + JSON.stringify(data));
+                appToken = data.token_type + data.access_token;
+                console.info('Set the apix token to ' + appToken);
+                mInitCallback();
+            },
+            error: function (request, status, error) {
+                console.error('Error occurred while getting authentication token at ' + apixAuthUrl +
+                    ', status: ' + status +
+                    ', error: ' + error);
+                throw new Error('Error occurred while getting authentication token at ' + apixAuthUrl +
+                    ', status: ' + status +
+                    ', error: ' + error);
+            }
+        });
+    };
 
     var getAppToken = function () {
-        if (appToken) {
-            return appToken;
-        } else {
-            HE.checkConfig(['apixAuthUrl', 'apixGrantType', 'clientAppKey', 'clientAppSecret', 'apixScope']);
-
-            $.ajax({
-                url: HE.config.apixAuthUrl,
-                type: 'POST',
-                async: false,
-                //FIXME: use callbacks instead of async: false which is not supported for cross domain requests.
-                data: 'grant_type=' + HE.config.apixGrantType +
-                    '&client_id=' + HE.config.clientAppKey +
-                    '&client_secret=' + HE.config.clientAppSecret +
-                    '&scope=' + HE.config.apixScope,
-                headers: HE.Trace.getHeaders(),
-                success: function (data) {
-                    console.debug('Received apix auth data ' + JSON.stringify(data));
-                    appToken = data.token_type + data.access_token;
-                    console.info('Set the apix token to ' + appToken);
-                },
-                error: function (request, status, error) {
-                    console.error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
-                        ', status: ' + status +
-                        ', error: ' + error);
-                    throw new Error('Error occurred while getting authentication token at ' + HE.config.apixAuthUrl +
-                        ', status: ' + status +
-                        ', error: ' + error);
-                }
-            });
-
-            return appToken;
+        if (!initialized || appToken === undefined) {
+            throw new Error("Apix is not initialized");
         }
+
+        return appToken;
+    };
+
+    var isInitialized = function() {
+        return initialized;
     };
 
     return {
-        getAppToken: getAppToken
+        init: init,
+        getAppToken: getAppToken,
+        isInitialized: isInitialized
     };
 }();
 
 HE.Throttling = function () {
     var incrementCounter = function () {
-        var throttlingValue = parseInt(HE.Storage.get(HE.config.throttlingCookieName), 10);
-        var throttlingExpiration = new Date(HE.Storage.get(HE.config.throttlingCookieExpirationName));
+        var throttlingValue = parseInt(HE.Storage.get(HE.Configuration.getProperty("throttlingCookieName")), 10);
+        var throttlingExpiration = new Date(HE.Storage.get(HE.Configuration.getProperty("throttlingCookieExpirationName")));
 
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
-            if (throttlingValue >= HE.config.throttlingPerPeriodLimit) {
+            if (throttlingValue >= HE.Configuration.getProperty("requestsThrottlingLimit")) {
                 throw new Error('Throttling exceeded');
             } else {
-                HE.Storage.set(HE.config.throttlingCookieName, throttlingValue + 1);
+                HE.Storage.set(HE.Configuration.getProperty("throttlingCookieName"), throttlingValue + 1);
             }
         } else {
             var date = new Date();
-            date.setTime(date.getTime() + (HE.config.throttlingPeriodMinutes * 60 * 1000));
-            HE.Storage.set(HE.config.throttlingCookieName, 1);
-            HE.Storage.set(HE.config.throttlingCookieExpirationName, date);
+            date.setTime(date.getTime() + (HE.Configuration.getProperty("requestsThrottlingPeriod") * 1000));
+            HE.Storage.set(HE.Configuration.getProperty("throttlingCookieName"), 1);
+            HE.Storage.set(HE.Configuration.getProperty("throttlingCookieExpirationName"), date);
         }
     };
 
@@ -202,17 +259,17 @@ HE.Trace = function () {
     var parser = new UAParser();
 
     var getSubjectId = function () {
-        if (HE.config.cookiesAllowed) {
-            if (!HE.Storage.get(HE.config.subjectIdCookieName)) {
+        if (HE.Configuration.getProperty("cookiesAllowed")) {
+            if (!HE.Storage.get(HE.Configuration.getProperty("subjectIdCookieName"))) {
                 HE.Storage.set(
-                    HE.config.subjectIdCookieName,
+                    HE.Configuration.getProperty("subjectIdCookieName"),
                         parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
                         parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
                         fingerprint.get()
                 );
             }
 
-            return HE.Storage.get(HE.config.subjectIdCookieName);
+            return HE.Storage.get(HE.Configuration.getProperty("subjectIdCookieName"));
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
@@ -232,7 +289,7 @@ HE.Trace = function () {
     var getHeaders = function () {
         return {
             'x-vf-trace-subject-region': getUserCountry(),
-            'x-vf-trace-source': HE.config.sdkId + '-' + HE.config.applicationId,
+            'x-vf-trace-source': HE.Configuration.getProperty("sdkId") + '-' + HE.Configuration.getProperty("clientAppKey"),
             'x-vf-trace-transaction-id': getTransactionId(),
             'x-vf-trace-subject-id': getSubjectId()
         };
@@ -247,7 +304,7 @@ HE.Token = function () {
     var get = function (msisdn, successCallback, errorCallback) {
         if (msisdn) {
             if (msisdnValid(msisdn)) {
-                callApix(msisdn, successCallback, errorCallback);
+                _callApix(msisdn, successCallback, errorCallback);
             } else {
                 errorCallback(new HE.Result(HE.Result.codes.INVALID_MSISDN, null, null));
             }
@@ -257,7 +314,7 @@ HE.Token = function () {
             console.debug('Protocol is ' + protocol);
 
             if (protocol === 'http:') {
-                callHap(successCallback, errorCallback);
+                _callHap(successCallback, errorCallback);
             } else {
                 errorCallback(new HE.Result(HE.Result.codes.NO_MSISDN_UNDER_HTTPS,
                     "MSISDN was not provided - cannot get token under https protocol", null));
@@ -265,47 +322,42 @@ HE.Token = function () {
         }
     };
 
-    var callHap = function (successCallback, errorCallback) {
-        HE.checkConfig(['hapResolveUrl']);
-
-        callResolver(
-            HE.config.hapResolveUrl,
-            JSON.stringify({}),
+    var _callHap = function (successCallback, errorCallback) {
+        _callResolver(
+            HE.Configuration.getProperty("hapResolveAbsoluteUrl"),
+            {},
             successCallback, errorCallback
         );
     };
 
-    var callApix = function (msisdn, successCallback, errorCallback) {
-        HE.checkConfig(['apixHost', 'apixResolveUrl']);
-
-        callResolver(
-                HE.config.apixHost + HE.config.apixResolveUrl,
-            JSON.stringify({
+    var _callApix = function (msisdn, successCallback, errorCallback) {
+        _callResolver(
+            HE.Configuration.getProperty("apixResolveAbsoluteUrl"),
+            {
                 msisdn: msisdn,
-                market: getMarket(msisdn)
-            }),
+                market: _getMarket(msisdn)
+            },
             successCallback, errorCallback
         );
     };
 
-    var callResolver = function (url, data, successCallback, errorCallback) {
+    var _callResolver = function (url, data, successCallback, errorCallback) {
         console.info('Getting token from ' + url);
 
         $.ajax({
-            url: url + '?backendId=' + HE.config.applicationId,
+            url: url + '?backendId=' + HE.Configuration.getProperty("backendId"),
             type: 'POST',
-            data: data,
+            data: JSON.stringify(data),
             contentType: 'application/json',
             crossDomain: true,
             headers: function () {
                 var headers = HE.Trace.getHeaders();
-                if (!DIRECT) {
-                    headers.Authorization = HE.Apix.getAppToken();
-                }
                 headers.backendScopes = 'seamless_id_user_details_acr_static';
                 if (DIRECT) {
-                    headers['x-sdp-msisdn'] = '491628133947';
-                    headers['x-int-opco'] = 'DE';
+                    headers['x-sdp-msisdn'] = data.msisdn;
+                    headers['x-intp-opco'] = data.market;
+                } else {
+                    headers.Authorization = HE.Apix.getAppToken();
                 }
                 return headers;
             }(),
@@ -335,10 +387,10 @@ HE.Token = function () {
     };
 
     var generateCode = function (confirmUrl, successCallback, errorCallback) {
-        HE.Storage.set(HE.config.tokenConfirmUrlKey, confirmUrl);
+        HE.Storage.set(HE.Configuration.getProperty("tokenConfirmUrlKey"), confirmUrl);
 
         $.ajax({
-            url: HE.config.apixHost + confirmUrl,
+            url: HE.Configuration.getProperty("apixBaseUrl") + confirmUrl,
             type: 'GET',
             headers: function () {
                 var headers = HE.Trace.getHeaders();
@@ -366,11 +418,11 @@ HE.Token = function () {
     };
 
     var confirmCode = function (code, successCallback, errorCallback) {
-        var confirmUrl = HE.Storage.get(HE.config.tokenConfirmUrlKey);
+        var confirmUrl = HE.Storage.get(HE.Configuration.getProperty("tokenConfirmUrlKey"));
 
-        console.info("Sending confirmation code to " + HE.config.apixHost + confirmUrl);
+        console.info("Sending confirmation code to " + HE.Configuration.getProperty("apixHost") + confirmUrl);
         $.ajax({
-            url: HE.config.apixHost + confirmUrl,
+            url: HE.Configuration.getProperty("apixBaseUrl") + confirmUrl,
             type: 'POST',
             data: JSON.stringify({
                 code: code
@@ -405,7 +457,7 @@ HE.Token = function () {
     };
 
     var msisdnValid = function (msisdn) {
-        var re = new RegExp(HE.config.msisdnValidationPattern);
+        var re = new RegExp(HE.Configuration.getProperty("phoneNumberRegex"));
 
         if (re.exec(msisdn)) {
             return true;
@@ -414,9 +466,22 @@ HE.Token = function () {
         return false;
     };
 
-    var getMarket = function (msisdn) {
-        var countryCode = msisdn.substring(0, 2);
-        return HE.config.markets[countryCode];
+    var _getMarket = function (msisdn) {
+        //FIXME: check the length before invoking substring
+        var countryPrefix = msisdn.substring(0, 2);
+        var toReturn;
+        $.each(HE.Configuration.getProperty("availableMarkets"), function(countryCode, phonePrefix) {
+            console.debug("Comparing " + countryPrefix + " with " + countryCode);
+            if (phonePrefix == countryPrefix) {
+                console.info("Got " + countryCode + " for MSISDN " + msisdn);
+                toReturn = countryCode;
+                return false;
+            }
+        });
+        if (toReturn === undefined) {
+            console.error("Could not extract countryCode from MSISDN: " + msisdn);
+        }
+        return toReturn;
     };
 
     return {

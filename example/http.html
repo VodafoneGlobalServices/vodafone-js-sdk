@@ -78,7 +78,7 @@
                     <label for="msisdn" class="control-label col-xs-3">MSISDN</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="msisdn" value="">
+                        <input type="text" class="form-control" id="msisdn">
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -139,7 +139,8 @@
         $("#initButton").click(function () {
             var initParameters = {
                 clientAppKey: $("#clientId").val(),
-                clientAppSecret: $("#clientSecret").val()
+                clientAppSecret: $("#clientSecret").val(),
+                backendId: $("#backendId").val()
             };
             HE.init(initParameters, initCallback);
         });
