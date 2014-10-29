@@ -7,10 +7,13 @@ var ENVIRONMENT = {
     ASLAU: 'ASLAU'
 }
 
+//Base config for PROD
 var PROD = {
     src: 'src/he.js',
     dest: 'dist/vodafone.min.js',
     options: {
+        beautify: false,
+        mangle: true,
         compress: {
             global_defs: {
                 DIRECT: false,
@@ -22,86 +25,33 @@ var PROD = {
     }
 };
 
-var PROD_DEBUG = {
-    options: {
-        beautify: true,
-        mangle: false,
-        compress: {
-            global_defs: {
-                DIRECT: false,
-                ENV: ENVIRONMENT.PROD
-            },
-            dead_code: true,
-            drop_console: false
-        }
-    },
-    src: 'src/he.js',
-    dest: 'dist/vodafone.debug.js'
-};
+var PROD_DEBUG = PROD;
+PROD_DEBUG.dest = "dist/vodafone.debug.js";
+PROD_DEBUG.options.beautify = true;
+PROD_DEBUG.options.mangle = false;
+PROD_DEBUG.options.compress.drop_console = false;
 
-var PRE_PROD_DIRECT = {
-    src: 'src/he.js',
-    dest: 'dist/vodafone.pre.direct.js',
-    options: {
-        compress: {
-            global_defs: {
-                DIRECT: true,
-                ENV: ENVIRONMENT.PRE_PROD
-            },
-            dead_code: true,
-            drop_console: true
-        }
-    }
-};
 
-var PRE_PROD = {
-    src: 'src/he.js',
-    dest: 'dist/vodafone.pre.js',
-    options: {
-        compress: {
-            global_defs: {
-                DIRECT: false,
-                ENV: ENVIRONMENT.PRE_PROD
-            },
-            dead_code: true,
-            drop_console: true
-        }
-    }
-};
+//Base config for PRE PROD
+var PRE_PROD = PROD;
+PRE_PROD.dest = "dist/vodafone.pre.js";
+PRE_PROD.options.compress.global_defs.ENV = ENVIRONMENT.PRE_PROD;
 
-var PRE_PROD_DEBUG = {
-    src: 'src/he.js',
-    dest: 'dist/vodafone.pre.debug.js',
-    options: {
-        beautify: true,
-        mangle: false,
-        compress: {
-            global_defs: {
-                DIRECT: false,
-                ENV: ENVIRONMENT.ASLAU
-            },
-            dead_code: true,
-            drop_console: false
-        }
-    }
-};
+var PRE_PROD_DEBUG = PRE_PROD;
+PRE_PROD_DEBUG.dest = "dist/vodafone.pre.debug.js";
+PRE_PROD_DEBUG.options.beautify = true;
+PRE_PROD_DEBUG.options.mangle = false;
+PRE_PROD_DEBUG.options.compress.drop_console = false;
 
-var DEV = {
-    options: {
-        beautify: true,
-        mangle: false,
-        compress: {
-            global_defs: {
-                DIRECT: true,
-                ENV: ENVIRONMENT.DEV
-            },
-            dead_code: true,
-            drop_console: false
-        }
-    },
-    src: 'src/he.js',
-    dest: 'dist/vodafone.dev.js'
-};
+
+//Development settings
+var DEV = PROD;
+DEV.dest = "vodafone.dev.js";
+DEV.options.beautify = true;
+DEV.options.mangle = false;
+DEV.options.compress.global_defs.DIRECT = true;
+DEV.options.compress.global_defs.ENV = ENVIRONMENT.ASLAU;
+DEV.options.compress.drop_console = false;
 
 module.exports = function (grunt) {
     // Project configuration.
@@ -135,7 +85,6 @@ module.exports = function (grunt) {
             prod_debug: PROD_DEBUG,
             pre_prod: PRE_PROD,
             pre_prod_debug: PRE_PROD_DEBUG,
-            pre_prod_direct: PRE_PROD_DIRECT,
             dev: DEV
         },
         'serve': {
@@ -155,7 +104,7 @@ module.exports = function (grunt) {
         copy: {
             main: {
                 src: 'dist/*.js',
-                dest: 'example/static/',
+                dest: 'example/static/'
             }
         }
     });
@@ -173,6 +122,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:pre_prod_direct', 'uglify:pre_prod_debug', 'uglify:prod', 'copy']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:pre_prod_debug', 'uglify:prod', 'copy']);
     grunt.registerTask('serve', ['uglify', 'serve']);
 };
