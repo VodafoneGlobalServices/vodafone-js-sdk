@@ -30,11 +30,14 @@ HE = (function () {
         }
     };
 
-    var confirmToken = function (successCallback, errorCallback) {
+    var confirmToken = function (code, successCallback, errorCallback) {
         try {
             _checkInitialization();
+            if (code === undefined) {
+                throw new Error("The 'code' parameter is mandatory");
+            }
             HE.Throttling.incrementCounter();
-            HE.Token.confirm(successCallback, errorCallback);
+            HE.Token.confirm(code, successCallback, errorCallback);
         } catch (e) {
             errorCallback(new HE.Result(HE.Result.codes.ERROR, e.message, undefined));
         }
@@ -420,9 +423,10 @@ HE.Token = function () {
     var confirmCode = function (code, successCallback, errorCallback) {
         var confirmUrl = HE.Storage.get(HE.Configuration.getProperty("tokenConfirmUrlKey"));
 
-        console.info("Sending confirmation code to " + HE.Configuration.getProperty("apixHost") + confirmUrl);
+        var absoluteConfirmationUrl = HE.Configuration.getProperty("apixBaseUrl") + confirmUrl;
+        console.info("Sending confirmation code '" +code+ "' to " + absoluteConfirmationUrl);
         $.ajax({
-            url: HE.Configuration.getProperty("apixBaseUrl") + confirmUrl,
+            url: absoluteConfirmationUrl,
             type: 'POST',
             data: JSON.stringify({
                 code: code
@@ -498,31 +502,53 @@ HE.Storage = function () {
 
     var set = function (name, value) {
         if (name && value) {
-            var encryptedName = encrypt(name.toString());
-            var encryptedValue = encrypt(value.toString());
+            var encryptedValue = _encrypt(value.toString());
 
-            console.debug("Setting " + name + " under " + encryptedName);
-            store.set(encryptedName, encryptedValue);
+            console.debug("Storing '" +name+ "', '" +value+ "', '" +encryptedValue+ "'");
+            store.set(name, encryptedValue);
+        } else {
+            console.warning("Did not set anything for " + name + " and " + value);
         }
     };
 
     var get = function (name) {
-        var encryptedName = encrypt(name);
+        var encryptedValue = store.get(name);
+        var value;
 
-        console.debug("Getting " + name + " under " + encryptedName);
-        var value = store.get(encryptedName);
-
-        if (value) {
-            return decrypt(value);
+        if (encryptedValue) {
+            value = _decrypt(encryptedValue);
         }
+
+        console.debug("Retrieving '" +name+ "', '" +value+ "', '" +encryptedValue+ "'");
+        return value;
     };
 
-    var encrypt = function (plain) {
-        return CryptoJS.Rabbit.encrypt(plain, key, { iv: iv }).toString();
+    var _encrypt = function (plain) {
+        return plain;
+//
+//        console.debug("Encrypting '" + plain + "'");
+//        var encrypted = CryptoJS.AES.encrypt(plain, key,
+//            {
+//                iv: iv,
+//                mode: CryptoJS.mode.CBC,
+//                padding: CryptoJS.pad.Pkcs7
+//            }).toString();
+//        console.debug("Encrypted to '" +encrypted+ "'");
+//        return  encrypted;
     };
 
-    var decrypt = function (encrypted) {
-        return CryptoJS.Rabbit.decrypt(encrypted, key, { iv: iv }).toString(CryptoJS.enc.Utf8);
+    var _decrypt = function (encrypted) {
+        return encrypted;
+//
+//        console.debug("Decrypting '" +encrypted+ "'");
+//        var plain = CryptoJS.AES.decrypt(encrypted, key,
+//            {
+//                iv: iv,
+//                mode: CryptoJS.mode.CBC,
+//                padding: CryptoJS.pad.Pkcs7
+//            }).toString(CryptoJS.enc.Utf8);
+//        console.debug("Decrypted to '" +plain+ "'");
+//        return  plain;
     };
 
     return {

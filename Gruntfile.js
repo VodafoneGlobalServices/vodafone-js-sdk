@@ -25,7 +25,7 @@ var PROD = {
     }
 };
 
-var PROD_DEBUG = PROD;
+var PROD_DEBUG = Object.create(PROD);
 PROD_DEBUG.dest = "dist/vodafone.debug.js";
 PROD_DEBUG.options.beautify = true;
 PROD_DEBUG.options.mangle = false;
@@ -33,11 +33,11 @@ PROD_DEBUG.options.compress.drop_console = false;
 
 
 //Base config for PRE PROD
-var PRE_PROD = PROD;
+var PRE_PROD = Object.create(PROD);
 PRE_PROD.dest = "dist/vodafone.pre.js";
 PRE_PROD.options.compress.global_defs.ENV = ENVIRONMENT.PRE_PROD;
 
-var PRE_PROD_DEBUG = PRE_PROD;
+var PRE_PROD_DEBUG = Object.create(PRE_PROD);
 PRE_PROD_DEBUG.dest = "dist/vodafone.pre.debug.js";
 PRE_PROD_DEBUG.options.beautify = true;
 PRE_PROD_DEBUG.options.mangle = false;
@@ -45,8 +45,8 @@ PRE_PROD_DEBUG.options.compress.drop_console = false;
 
 
 //Development settings
-var DEV = PROD;
-DEV.dest = "vodafone.dev.js";
+var DEV = Object.create(PROD);
+DEV.dest = "dist/vodafone.dev.js";
 DEV.options.beautify = true;
 DEV.options.mangle = false;
 DEV.options.compress.global_defs.DIRECT = true;
@@ -122,6 +122,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:dev', 'uglify:prod_debug', 'uglify:pre_prod_debug', 'uglify:prod', 'copy']);
+    grunt.registerTask('default', ['jshint', 'clean', 'plato', 'uglify:prod', 'uglify:prod_debug', 'uglify:pre_prod', 'uglify:pre_prod_debug', 'uglify:dev', 'copy']);
     grunt.registerTask('serve', ['uglify', 'serve']);
 };

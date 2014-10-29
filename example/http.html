@@ -7,11 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <script src="static/lib/jquery/dist/jquery.min.js"></script>
-    <script src="static/lib/crypto-js/rollups/md5.js"></script>
-    <script src="static/lib/crypto-js/rollups/rabbit.js"></script>
     <script src="static/lib/fingerprint/fingerprint.js"></script>
     <script src="static/lib/ua-parser-js/src/ua-parser.min.js"></script>
     <script src="static/lib/persist-js/persist-min.js"></script>
+    <script src="static/lib/crypto-js/rollups/aes.js"></script>
     <script src="static/dist/vodafone.dev.js"></script>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
@@ -78,7 +77,7 @@
                     <label for="msisdn" class="control-label col-xs-3">MSISDN</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="msisdn">
+                        <input type="text" class="form-control" id="msisdn" value="491735606200">
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -125,6 +124,9 @@
     console.info = function(message) {
         displayMessage("color: #008000", message);
     };
+    console.warning = function (message) {
+        displayMessage("color: #FF6600", message);
+    };
     console.error = function (message) {
         displayMessage("color: #FF0000", message);
     };
@@ -149,7 +151,8 @@
             HE.getToken(msisdn, successCallback, errorCallback);
         });
         $("#confirmTokenButton").click(function () {
-            HE.confirmToken();
+            var code = $("#pin").val();
+            HE.confirmToken(code, successCallback, errorCallback);
         });
     });
 
@@ -167,39 +170,6 @@
         console.info("Init callback");
         console.info(JSON.stringify(heResult, undefined, 2));
     };
-    //    function handleResolvedUserData(result) {
-    //        if (result.code === HE.Result.codes.TOKEN_CREATED) {
-    //            $('#status').text('Received token ' + result.data.tokenId);
-    //        } else if (result.code === HE.Result.codes.OTP_SMS_SENT) {
-    //            $('#status').text('PIN sent to the given MSISDN');
-    //            $('#confirmation').show();
-    //        } else {
-    //            $('#status').text('Unsupported result');
-    //        }
-    //    }
-    //
-    //    function handleError(result) {
-    //        $('#status').text('Caught an error: ' + result.code + ' ' + result.message);
-    //    }
-    //
-    //    $('#pin-confirm').click(function () {
-    //        he.confirmToken($("#pin").val(), handleResolvedUserData, handleError);
-    //    });
-    //
-    //    var he = HE.init({
-    //        applicationId: 'curlscript',
-    //        clientAppKey: 'I1OpZaPfBcI378Bt7PBhQySW5Setb8eb',
-    //        clientAppSecret: 'k4l1RXZGqMnw2cD8',
-    //        cookiesAllowed: false
-    //    });
-    //
-    //    setTimeout(function () {
-    //        HE.getToken(
-    //                '491735606200',
-    //                handleResolvedUserData,
-    //                handleError
-    //        );
-    //    }, 3000);
 </script>
 </body>
 </html>
