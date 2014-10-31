@@ -1,17 +1,17 @@
-HE = window.HE || {};
+Vodafone = window.Vodafone || {};
 
-HE = (function () {
+Vodafone = (function () {
     var init = function (mOptions, mInitCallback) {
-        if (HE.Configuration.isInitialized() && HE.Apix.isIntialized()) {
+        if (Vodafone.Configuration.isInitialized() && Vodafone.Apix.isIntialized()) {
             console.info("Already initialized.");
-            mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, undefined, undefined));
+            mInitCallback(new Vodafone.Result(Vodafone.Result.codes.INITIALIZED, undefined, undefined));
             return;
         }
 
         try {
-            HE.Configuration.init(mOptions, function(result) {
-                if (result.code === HE.Result.codes.INITIALIZED) {
-                    HE.Apix.init(mInitCallback);
+            Vodafone.Configuration.init(mOptions, function(result) {
+                if (result.code === Vodafone.Result.codes.INITIALIZED) {
+                    Vodafone.Apix.init(mInitCallback);
                 }
             });
         } catch (e) {
@@ -23,10 +23,10 @@ HE = (function () {
     var getToken = function (msisdn, successCallback, errorCallback) {
         try {
             _checkInitialization();
-            HE.Throttling.incrementCounter();
-            HE.Token.get(msisdn, successCallback, errorCallback);
+            Vodafone.Throttling.incrementCounter();
+            Vodafone.Token.get(msisdn, successCallback, errorCallback);
         } catch (e) {
-            errorCallback(new HE.Result(HE.Result.codes.ERROR, e.message, undefined));
+            errorCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, e.message, undefined));
         }
     };
 
@@ -37,15 +37,15 @@ HE = (function () {
             if (code === undefined || code === '' || isNaN(code)) {
                 throw new Error("The 'code' parameter is mandatory and it must be a numeric value");
             }
-            HE.Throttling.incrementCounter();
-            HE.Token.confirm(code, successCallback, errorCallback);
+            Vodafone.Throttling.incrementCounter();
+            Vodafone.Token.confirm(code, successCallback, errorCallback);
         } catch (e) {
-            errorCallback(new HE.Result(HE.Result.codes.ERROR, e.message, undefined));
+            errorCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, e.message, undefined));
         }
     };
 
     var _checkInitialization = function () {
-        if (!HE.Configuration.isInitialized()) {
+        if (!Vodafone.Configuration.isInitialized()) {
             throw new Error("SDK not initialized");
         }
     };
@@ -57,7 +57,7 @@ HE = (function () {
     };
 })();
 
-HE.Configuration = function() {
+Vodafone.Configuration = function() {
     var initialized = false;
     var configuration = {};
 
@@ -67,7 +67,7 @@ HE.Configuration = function() {
 
         if (initialized) {
             console.info("Already initialized.");
-            mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, undefined, undefined));
+            mInitCallback(new Vodafone.Result(Vodafone.Result.codes.INITIALIZED, undefined, undefined));
             return;
         }
 
@@ -150,7 +150,7 @@ HE.Configuration = function() {
                 console.info('Configuration initialisation done');
                 console.debug(JSON.stringify(configuration, undefined, 2));
 
-                mInitCallback(new HE.Result(HE.Result.codes.INITIALIZED, "SDK configuration initialized", data));
+                mInitCallback(new Vodafone.Result(Vodafone.Result.codes.INITIALIZED, "SDK configuration initialized", data));
             },
             error: function (request, status, error) {
                 var errorData = {
@@ -158,7 +158,7 @@ HE.Configuration = function() {
                     status: status,
                     error: error
                 };
-                mInitCallback(new HE.Result(HE.Result.codes.ERROR, "Error while retrieving configuration", errorData));
+                mInitCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, "Error while retrieving configuration", errorData));
             }
         });
     };
@@ -191,20 +191,20 @@ HE.Configuration = function() {
     };
 }();
 
-HE.Apix = function () {
+Vodafone.Apix = function () {
     var appToken;
     var initialized = false;
 
     var init = function(mInitCallback) {
         console.debug("oAuth token NOT set. Retrieving it from APIX");
-        var apixAuthUrl = HE.Configuration.getProperty("apixAuthAbsoluteUrl");
+        var apixAuthUrl = Vodafone.Configuration.getProperty("apixAuthAbsoluteUrl");
         $.ajax({
             url: apixAuthUrl,
             type: 'POST',
-            data: 'grant_type=' + HE.Configuration.getProperty("apix.oAuthTokenGrantType") +
-                '&client_id=' + HE.Configuration.getProperty("clientAppKey") +
-                '&client_secret=' + HE.Configuration.getProperty("clientAppSecret") +
-                '&scope=' + HE.Configuration.getProperty("apix.oAuthTokenScope"),
+            data: 'grant_type=' + Vodafone.Configuration.getProperty("apix.oAuthTokenGrantType") +
+                '&client_id=' + Vodafone.Configuration.getProperty("clientAppKey") +
+                '&client_secret=' + Vodafone.Configuration.getProperty("clientAppSecret") +
+                '&scope=' + Vodafone.Configuration.getProperty("apix.oAuthTokenScope"),
             success: function (data) {
                 console.debug('Received apix auth data ' + JSON.stringify(data));
                 appToken = data.token_type + data.access_token;
@@ -241,22 +241,22 @@ HE.Apix = function () {
     };
 }();
 
-HE.Throttling = function () {
+Vodafone.Throttling = function () {
     var incrementCounter = function () {
-        var throttlingValue = parseInt(HE.Storage.get(HE.Configuration.getProperty("throttlingCookieName")), 10);
-        var throttlingExpiration = new Date(HE.Storage.get(HE.Configuration.getProperty("throttlingCookieExpirationName")));
+        var throttlingValue = parseInt(Vodafone.Storage.get(Vodafone.Configuration.getProperty("throttlingCookieName")), 10);
+        var throttlingExpiration = new Date(Vodafone.Storage.get(Vodafone.Configuration.getProperty("throttlingCookieExpirationName")));
 
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
-            if (throttlingValue >= HE.Configuration.getProperty("requestsThrottlingLimit")) {
+            if (throttlingValue >= Vodafone.Configuration.getProperty("requestsThrottlingLimit")) {
                 throw new Error('Throttling exceeded');
             } else {
-                HE.Storage.set(HE.Configuration.getProperty("throttlingCookieName"), throttlingValue + 1);
+                Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieName"), throttlingValue + 1);
             }
         } else {
             var date = new Date();
-            date.setTime(date.getTime() + (HE.Configuration.getProperty("requestsThrottlingPeriod") * 1000));
-            HE.Storage.set(HE.Configuration.getProperty("throttlingCookieName"), 1);
-            HE.Storage.set(HE.Configuration.getProperty("throttlingCookieExpirationName"), date);
+            date.setTime(date.getTime() + (Vodafone.Configuration.getProperty("requestsThrottlingPeriod") * 1000));
+            Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieName"), 1);
+            Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieExpirationName"), date);
         }
     };
 
@@ -265,22 +265,22 @@ HE.Throttling = function () {
     };
 }();
 
-HE.Trace = function () {
+Vodafone.Trace = function () {
     var fingerprint = new Fingerprint();
     var parser = new UAParser();
 
     var getSubjectId = function () {
-        if (HE.Configuration.getProperty("cookiesAllowed")) {
-            if (!HE.Storage.get(HE.Configuration.getProperty("subjectIdCookieName"))) {
-                HE.Storage.set(
-                    HE.Configuration.getProperty("subjectIdCookieName"),
+        if (Vodafone.Configuration.getProperty("cookiesAllowed")) {
+            if (!Vodafone.Storage.get(Vodafone.Configuration.getProperty("subjectIdCookieName"))) {
+                Vodafone.Storage.set(
+                    Vodafone.Configuration.getProperty("subjectIdCookieName"),
                         parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
                         parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
                         fingerprint.get()
                 );
             }
 
-            return HE.Storage.get(HE.Configuration.getProperty("subjectIdCookieName"));
+            return Vodafone.Storage.get(Vodafone.Configuration.getProperty("subjectIdCookieName"));
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
@@ -300,7 +300,7 @@ HE.Trace = function () {
     var getHeaders = function () {
         return {
             'x-vf-trace-subject-region': getUserCountry(),
-            'x-vf-trace-source': HE.Configuration.getProperty("sdkId") + '-' + HE.Configuration.getProperty("clientAppKey"),
+            'x-vf-trace-source': Vodafone.Configuration.getProperty("sdkId") + '-' + Vodafone.Configuration.getProperty("clientAppKey"),
             'x-vf-trace-transaction-id': getTransactionId(),
             'x-vf-trace-subject-id': getSubjectId()
         };
@@ -311,13 +311,13 @@ HE.Trace = function () {
     };
 }();
 
-HE.Token = function () {
+Vodafone.Token = function () {
     var get = function (msisdn, successCallback, errorCallback) {
         if (msisdn) {
             if (msisdnValid(msisdn)) {
                 _callApix(msisdn, successCallback, errorCallback);
             } else {
-                errorCallback(new HE.Result(HE.Result.codes.INVALID_MSISDN, null, null));
+                errorCallback(new Vodafone.Result(Vodafone.Result.codes.INVALID_MSISDN, null, null));
             }
         } else {
             var protocol = window.location.protocol;
@@ -327,7 +327,7 @@ HE.Token = function () {
             if (protocol === 'http:') {
                 _callHap(successCallback, errorCallback);
             } else {
-                errorCallback(new HE.Result(HE.Result.codes.NO_MSISDN_UNDER_HTTPS,
+                errorCallback(new Vodafone.Result(Vodafone.Result.codes.NO_MSISDN_UNDER_HTTPS,
                     "MSISDN was not provided - cannot get token under https protocol", null));
             }
         }
@@ -335,7 +335,7 @@ HE.Token = function () {
 
     var _callHap = function (successCallback, errorCallback) {
         _callResolver(
-            HE.Configuration.getProperty("hapResolveAbsoluteUrl"),
+            Vodafone.Configuration.getProperty("hapResolveAbsoluteUrl"),
             {},
             successCallback, errorCallback
         );
@@ -343,7 +343,7 @@ HE.Token = function () {
 
     var _callApix = function (msisdn, successCallback, errorCallback) {
         _callResolver(
-            HE.Configuration.getProperty("apixResolveAbsoluteUrl"),
+            Vodafone.Configuration.getProperty("apixResolveAbsoluteUrl"),
             {
                 msisdn: msisdn,
                 market: _getMarket(msisdn)
@@ -356,19 +356,19 @@ HE.Token = function () {
         console.info('Getting token from ' + url);
 
         $.ajax({
-            url: url + '?backendId=' + HE.Configuration.getProperty("backendId"),
+            url: url + '?backendId=' + Vodafone.Configuration.getProperty("backendId"),
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             crossDomain: true,
             headers: function () {
-                var headers = HE.Trace.getHeaders();
+                var headers = Vodafone.Trace.getHeaders();
                 headers.backendScopes = 'seamless_id_user_details_acr_static';
                 if (DIRECT) {
                     headers['x-sdp-msisdn'] = data.msisdn;
                     headers['x-intp-opco'] = data.market;
                 } else {
-                    headers.Authorization = HE.Apix.getAppToken();
+                    headers.Authorization = Vodafone.Apix.getAppToken();
                 }
                 return headers;
             }(),
@@ -377,13 +377,13 @@ HE.Token = function () {
                 console.debug(xhr.getResponseHeader('Location'));
                 if (data) {
                     console.debug('Received token data ' + JSON.stringify(data));
-                    successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
+                    successCallback(new Vodafone.Result(Vodafone.Result.codes.TOKEN_CREATED, null, data));
                 } else if (xhr.getResponseHeader('Location')) {
                     console.debug('OTP validation required, location is ' + xhr.getResponseHeader('Location'));
                     generateCode(xhr.getResponseHeader('Location'), successCallback, errorCallback);
                 } else {
                     console.debug('Error parsing token data ' + JSON.stringify(data));
-                    errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
+                    errorCallback(new Vodafone.Result(Vodafone.Result.codes.INVALID_DATA, null, null));
                 }
             },
             error: function (request, status, error) {
@@ -392,27 +392,27 @@ HE.Token = function () {
                     ', error: ' + error;
 
                 console.error(message);
-                errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
+                errorCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, message, null));
             }
         });
     };
 
     var generateCode = function (confirmUrl, successCallback, errorCallback) {
-        HE.Storage.set(HE.Configuration.getProperty("tokenConfirmUrlKey"), confirmUrl);
+        Vodafone.Storage.set(Vodafone.Configuration.getProperty("tokenConfirmUrlKey"), confirmUrl);
 
         $.ajax({
-            url: HE.Configuration.getProperty("apixBaseUrl") + confirmUrl,
+            url: Vodafone.Configuration.getProperty("apixBaseUrl") + confirmUrl,
             type: 'GET',
             headers: function () {
-                var headers = HE.Trace.getHeaders();
+                var headers = Vodafone.Trace.getHeaders();
                 if (!DIRECT) {
-                    headers.Authorization = HE.Apix.getAppToken();
+                    headers.Authorization = Vodafone.Apix.getAppToken();
                 }
                 return headers;
             }(),
             success: function () {
                 if (successCallback) {
-                    successCallback(new HE.Result(HE.Result.codes.OTP_SMS_SENT, null, null));
+                    successCallback(new Vodafone.Result(Vodafone.Result.codes.OTP_SMS_SENT, null, null));
                 }
             },
             error: function (request, status, error) {
@@ -422,16 +422,16 @@ HE.Token = function () {
 
                 console.error(message);
                 if (errorCallback) {
-                    errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
+                    errorCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, message, null));
                 }
             }
         });
     };
 
     var confirmCode = function (code, successCallback, errorCallback) {
-        var confirmUrl = HE.Storage.get(HE.Configuration.getProperty("tokenConfirmUrlKey"));
+        var confirmUrl = Vodafone.Storage.get(Vodafone.Configuration.getProperty("tokenConfirmUrlKey"));
 
-        var absoluteConfirmationUrl = HE.Configuration.getProperty("apixBaseUrl") + confirmUrl;
+        var absoluteConfirmationUrl = Vodafone.Configuration.getProperty("apixBaseUrl") + confirmUrl;
         console.info("Sending confirmation code '" +code+ "' to " + absoluteConfirmationUrl);
         $.ajax({
             url: absoluteConfirmationUrl,
@@ -441,18 +441,18 @@ HE.Token = function () {
             }),
             contentType: 'application/json',
             headers: function () {
-                var headers = HE.Trace.getHeaders();
+                var headers = Vodafone.Trace.getHeaders();
                 if (!DIRECT) {
-                    headers.Authorization = HE.Apix.getAppToken();
+                    headers.Authorization = Vodafone.Apix.getAppToken();
                 }
                 return headers;
             }(),
             success: function (data) {
                 if (data) {
                     console.debug('Received token data ' + JSON.stringify(data));
-                    successCallback(new HE.Result(HE.Result.codes.TOKEN_CREATED, null, data));
+                    successCallback(new Vodafone.Result(Vodafone.Result.codes.TOKEN_CREATED, null, data));
                 } else {
-                    errorCallback(new HE.Result(HE.Result.codes.INVALID_DATA, null, null));
+                    errorCallback(new Vodafone.Result(Vodafone.Result.codes.INVALID_DATA, null, null));
                 }
             },
             error: function (request, status, error) {
@@ -462,14 +462,14 @@ HE.Token = function () {
 
                 console.error(message);
                 if (errorCallback) {
-                    errorCallback(new HE.Result(HE.Result.codes.ERROR, message, null));
+                    errorCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, message, null));
                 }
             }
         });
     };
 
     var msisdnValid = function (msisdn) {
-        var re = new RegExp(HE.Configuration.getProperty("phoneNumberRegex"));
+        var re = new RegExp(Vodafone.Configuration.getProperty("phoneNumberRegex"));
 
         if (re.exec(msisdn)) {
             return true;
@@ -482,7 +482,7 @@ HE.Token = function () {
         //FIXME: check the length before invoking substring
         var countryPrefix = msisdn.substring(0, 2);
         var toReturn;
-        $.each(HE.Configuration.getProperty("availableMarkets"), function(countryCode, phonePrefix) {
+        $.each(Vodafone.Configuration.getProperty("availableMarkets"), function(countryCode, phonePrefix) {
             console.debug("Comparing " + countryPrefix + " with " + countryCode);
             if (phonePrefix == countryPrefix) {
                 console.info("Got " + countryCode + " for MSISDN " + msisdn);
@@ -502,7 +502,7 @@ HE.Token = function () {
     };
 }();
 
-HE.Storage = function () {
+Vodafone.Storage = function () {
     var store = new Persist.Store('js-sdk');
 
     var key = CryptoJS.enc.Hex.parse("000102030405060708090a0b0c0d0e0f");
@@ -565,13 +565,13 @@ HE.Storage = function () {
     };
 }();
 
-HE.Result = function (code, message, data) {
+Vodafone.Result = function (code, message, data) {
     this.code = code;
     this.message = message;
     this.data = data;
 };
 
-HE.Result.codes = {
+Vodafone.Result.codes = {
     ERROR: 'ERROR',
     INITIALIZED: 'Initialized',
     UNABLE_TO_RESOLVE: 'Unable to resolve',

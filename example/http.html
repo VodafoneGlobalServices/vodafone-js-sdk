@@ -194,15 +194,15 @@
                 clientAppSecret: $("#clientSecret").val(),
                 backendId: $("#backendId").val()
             };
-            HE.init(initParameters, initCallback);
+            Vodafone.init(initParameters, initCallback);
         });
         $("#getTokenButton").click(function () {
             var msisdn = $("#msisdn").val();
-            HE.getToken(msisdn, successCallback, errorCallback);
+            Vodafone.getToken(msisdn, successCallback, errorCallback);
         });
         $("#confirmPinButton").click(function () {
             var code = $("#pin").val();
-            HE.confirmPin(code, successCallback, errorCallback);
+            Vodafone.confirmPin(code, successCallback, errorCallback);
         });
         $("#logLevelError").click(function() {
             filterOutput("error");
