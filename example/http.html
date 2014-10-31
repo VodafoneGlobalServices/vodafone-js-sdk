@@ -70,7 +70,8 @@
                     <label for="backendId" class="control-label col-xs-3">Backend ID</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="backendId" value="WCejf6WmXCw7fK07HzWMbTtJyYuEfQwc"/>
+                        <input type="text" class="form-control" id="backendId"
+                               value="WCejf6WmXCw7fK07HzWMbTtJyYuEfQwc"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -98,6 +99,19 @@
                 <button type="button" class="btn btn-default" id="initButton">Invoke .init</button>
                 <button type="button" class="btn btn-default" id="getTokenButton">Invoke getToken()</button>
                 <button type="button" class="btn btn-default" id="confirmTokenButton">Invoke confirmToken()</button>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        <span id="logLevelLabel">Log level: DEBUG</span>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="#" id="logLevelError">Error</a></li>
+                        <li><a href="#" id="logLevelWarning">Warning</a></li>
+                        <li><a href="#" id="logLevelInfo">Info</a></li>
+                        <li><a href="#" id="logLevelDebug">Debug</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -115,25 +129,61 @@
 
 <script>
     var console = {};
-    console.log = function(message) {
-        displayMessage("color: #333333", message);
+    var logArray = [];
+    var LEVEL = {};
+    LEVEL["error"] = 0;
+    LEVEL["warning"] = 1;
+    LEVEL["info"] = 2;
+    LEVEL["debug"] = 3;
+
+    console.log = function (message) {
+        var line = {level: "debug", message: message};
+        displayLine(line);
+        logArray.push(line);
     };
-    console.debug = function(message) {
-        displayMessage("color: #333333", message);
+    console.debug = function (message) {
+        var line = {level: "debug", message: message};
+        displayLine(line);
+        logArray.push(line);
     };
-    console.info = function(message) {
-        displayMessage("color: #008000", message);
+    console.info = function (message) {
+        var line = {level: "info", message: message};
+        displayLine(line);
+        logArray.push(line);
     };
     console.warning = function (message) {
-        displayMessage("color: #FF6600", message);
+        var line = {level: "warning", message: message};
+        displayLine(line);
+        logArray.push(line);
     };
     console.error = function (message) {
-        displayMessage("color: #FF0000", message);
+        var line = {level: "error", message: message};
+        displayLine(line);
+        logArray.push(line);
     };
 
-    var displayMessage = function(style, message) {
+    var filterOutput = function (desiredLevel) {
+        $("#console").empty();
+        $("#logLevelLabel").text("Log level: " + desiredLevel.toUpperCase());
+
+        $.each(logArray, function (index, line) {
+            if (LEVEL[line.level] <= LEVEL[desiredLevel]) {
+                displayLine(line);
+            }
+        });
+    };
+
+    var displayLine = function (line) {
         if ($("#console").length > 0) {
-            $("#console").append("<span style='" +style+ "'>" + message + "</span></br>");
+            var style = "color: #333333";
+            if (LEVEL[line.level] == 2)
+                style = "color: #008000";
+            if (LEVEL[line.level] == 1)
+                style = "color: #FF6600";
+            if (LEVEL[line.level] == 0)
+                style = "color: #FF0000";
+
+            $("#console").append("<span style='" + style + "'>" + line.message + "</span></br>");
         }
     }
 
@@ -154,6 +204,18 @@
             var code = $("#pin").val();
             HE.confirmToken(code, successCallback, errorCallback);
         });
+        $("#logLevelError").click(function() {
+            filterOutput("error");
+        });
+        $("#logLevelWarning").click(function() {
+            filterOutput("warning");
+        });
+        $("#logLevelInfo").click(function() {
+            filterOutput("info");
+        });
+        $("#logLevelDebug").click(function() {
+            filterOutput("debug");
+        });
     });
 
     var successCallback = function (heResult) {
@@ -166,7 +228,7 @@
         console.error(JSON.stringify(heResult, undefined, 2));
     };
 
-    var initCallback = function(heResult) {
+    var initCallback = function (heResult) {
         console.info("Init callback");
         console.info(JSON.stringify(heResult, undefined, 2));
     };
