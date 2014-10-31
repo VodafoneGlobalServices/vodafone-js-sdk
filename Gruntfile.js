@@ -7,7 +7,6 @@ var ENVIRONMENT = {
     ASLAU: 'ASLAU'
 }
 
-//Base config for PROD
 var PROD = {
     src: 'src/he.js',
     dest: 'dist/vodafone.min.js',
@@ -25,33 +24,74 @@ var PROD = {
     }
 };
 
-var PROD_DEBUG = Object.create(PROD);
-PROD_DEBUG.dest = "dist/vodafone.debug.js";
-PROD_DEBUG.options.beautify = true;
-PROD_DEBUG.options.mangle = false;
-PROD_DEBUG.options.compress.drop_console = false;
+var PROD_DEBUG = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.debug.js',
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DIRECT: false,
+                ENV: ENVIRONMENT.PROD
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    }
+};
 
+var PRE_PROD = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.pre.js',
+    options: {
+        beautify: false,
+        mangle: true,
+        compress: {
+            global_defs: {
+                DIRECT: false,
+                ENV: ENVIRONMENT.PRE_PROD
+            },
+            dead_code: true,
+            drop_console: true
+        }
+    }
+};
 
-//Base config for PRE PROD
-var PRE_PROD = Object.create(PROD);
-PRE_PROD.dest = "dist/vodafone.pre.js";
-PRE_PROD.options.compress.global_defs.ENV = ENVIRONMENT.PRE_PROD;
+var PRE_PROD_DEBUG = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.pre.debug.js',
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DIRECT: false,
+                ENV: ENVIRONMENT.PRE_PROD
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    }
+};
 
-var PRE_PROD_DEBUG = Object.create(PRE_PROD);
-PRE_PROD_DEBUG.dest = "dist/vodafone.pre.debug.js";
-PRE_PROD_DEBUG.options.beautify = true;
-PRE_PROD_DEBUG.options.mangle = false;
-PRE_PROD_DEBUG.options.compress.drop_console = false;
+var DEV = {
+    src: 'src/he.js',
+    dest: 'dist/vodafone.dev.js',
+    options: {
+        beautify: true,
+        mangle: false,
+        compress: {
+            global_defs: {
+                DIRECT: true,
+                ENV: ENVIRONMENT.ASLAU
+            },
+            dead_code: true,
+            drop_console: false
+        }
+    }
+};
 
-
-//Development settings
-var DEV = Object.create(PROD);
-DEV.dest = "dist/vodafone.dev.js";
-DEV.options.beautify = true;
-DEV.options.mangle = false;
-DEV.options.compress.global_defs.DIRECT = true;
-DEV.options.compress.global_defs.ENV = ENVIRONMENT.ASLAU;
-DEV.options.compress.drop_console = false;
 
 module.exports = function (grunt) {
     // Project configuration.
