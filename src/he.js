@@ -30,11 +30,12 @@ HE = (function () {
         }
     };
 
-    var confirmToken = function (code, successCallback, errorCallback) {
+    var confirmPin = function (code, successCallback, errorCallback) {
+        console.debug("Confirming PIN " + code);
         try {
             _checkInitialization();
-            if (code === undefined) {
-                throw new Error("The 'code' parameter is mandatory");
+            if (code === undefined || code === '' || isNaN(code)) {
+                throw new Error("The 'code' parameter is mandatory and it must be a numeric value");
             }
             HE.Throttling.incrementCounter();
             HE.Token.confirm(code, successCallback, errorCallback);
@@ -52,7 +53,7 @@ HE = (function () {
     return {
         init: init,
         getToken: getToken,
-        confirmToken: confirmToken
+        confirmPin: confirmPin
     };
 })();
 

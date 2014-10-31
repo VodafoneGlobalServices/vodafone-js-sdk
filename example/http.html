@@ -78,7 +78,7 @@
                     <label for="msisdn" class="control-label col-xs-3">MSISDN</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="msisdn" value="491735606200">
+                        <input type="text" class="form-control" id="msisdn" value="4915220440681">
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -98,7 +98,7 @@
                 <button type="button" class="btn btn-default" id="resetButton">Reset values</button>
                 <button type="button" class="btn btn-default" id="initButton">Invoke .init</button>
                 <button type="button" class="btn btn-default" id="getTokenButton">Invoke getToken()</button>
-                <button type="button" class="btn btn-default" id="confirmTokenButton">Invoke confirmToken()</button>
+                <button type="button" class="btn btn-default" id="confirmPinButton">Invoke confirmPin()</button>
 
                 <div class="btn-group">
                     <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
@@ -200,9 +200,9 @@
             var msisdn = $("#msisdn").val();
             HE.getToken(msisdn, successCallback, errorCallback);
         });
-        $("#confirmTokenButton").click(function () {
+        $("#confirmPinButton").click(function () {
             var code = $("#pin").val();
-            HE.confirmToken(code, successCallback, errorCallback);
+            HE.confirmPin(code, successCallback, errorCallback);
         });
         $("#logLevelError").click(function() {
             filterOutput("error");
