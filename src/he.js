@@ -164,7 +164,16 @@ HE.Configuration = function() {
     };
 
     var _calculateCompoundProperties = function() {
-        configuration.hapResolveAbsoluteUrl = configuration.hap.protocol + "://" + configuration.hap.host + configuration.basePath;
+        var iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+        var android = ( navigator.userAgent.match(/(android|Android)/g) ? true : false );
+
+        if (iOS) {
+            configuration.hapResolveAbsoluteUrl = configuration.hap.protocol + "://" + configuration.hap.hostiOS + configuration.basePath;
+        } else if (android) {
+            configuration.hapResolveAbsoluteUrl = configuration.hap.protocol + "://" + configuration.hap.hostAndroid + configuration.basePath;
+        } else {
+            configuration.hapResolveAbsoluteUrl = configuration.hap.protocol + "://" + configuration.hap.host + configuration.basePath;
+        }
         configuration.apixAuthAbsoluteUrl = configuration.apix.protocol + "://" + configuration.apix.host + configuration.apix.oAuthTokenPath;
         if (DIRECT) {
             configuration.apixBaseUrl = "http://SeamId-4090514559.eu-de1.plex.vodafone.com";
@@ -192,8 +201,6 @@ HE.Apix = function () {
         $.ajax({
             url: apixAuthUrl,
             type: 'POST',
-            //FIXME: use callbacks instead of async: false which is not supported for cross domain requests.
-//                async: false,
             data: 'grant_type=' + HE.Configuration.getProperty("apix.oAuthTokenGrantType") +
                 '&client_id=' + HE.Configuration.getProperty("clientAppKey") +
                 '&client_secret=' + HE.Configuration.getProperty("clientAppSecret") +
