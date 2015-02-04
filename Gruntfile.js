@@ -2,7 +2,7 @@
 
 var ENVIRONMENT = {
     PROD: 'PROD',
-    PRE_PROD: 'PRE-PROD',
+    PRE_PROD: 'PRE_PROD',
     DEV: 'DEV',
     ASLAU: 'ASLAU'
 }
