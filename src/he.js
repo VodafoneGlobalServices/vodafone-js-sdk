@@ -195,7 +195,8 @@ Vodafone.Apix = function () {
                 '&scope=' + Vodafone.Configuration.getConfiguration().apix.oAuthTokenScope,
             success: function (data) {
                 console.debug('Received apix auth data ' + JSON.stringify(data));
-                appToken = data.token_type + data.access_token;
+                appToken = data.token_type +' '+ data.access_token;
+                initialized = true;
                 console.info('Set the apix token to ' + appToken);
                 mInitCallback();
             },
