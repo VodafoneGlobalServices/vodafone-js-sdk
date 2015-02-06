@@ -80,20 +80,8 @@ Vodafone.Configuration = function() {
         }
     };
 
-    var getProperty = function(property, defaultValue) {
-        //FIXME: check the string before eval as it can be a security issue
-        var value = eval("configuration." + property); // jshint ignore:line
-        if (value === undefined) {
-            if (defaultValue === undefined) {
-                console.error("Property " + property + " is undefined");
-                throw new Error('Improperly configured - ' + property + ' is not defined');
-            } else {
-                value = defaultValue;
-            }
-        }
-
-        console.debug("configuration[" +property+ "]=" + value);
-        return  value;
+    var getConfiguration = function() {
+        return configuration;
     };
 
     var isInitialized = function() {
@@ -186,7 +174,7 @@ Vodafone.Configuration = function() {
 
     return {
         init: init,
-        getProperty: getProperty,
+        getConfiguration: getConfiguration,
         isInitialized: isInitialized
     };
 }();
@@ -197,14 +185,14 @@ Vodafone.Apix = function () {
 
     var init = function(mInitCallback) {
         console.debug("oAuth token NOT set. Retrieving it from APIX");
-        var apixAuthUrl = Vodafone.Configuration.getProperty("apixAuthAbsoluteUrl");
+        var apixAuthUrl = Vodafone.Configuration.getConfiguration().apixAuthAbsoluteUrl;
         $.ajax({
             url: apixAuthUrl,
             type: 'POST',
-            data: 'grant_type=' + Vodafone.Configuration.getProperty("apix.oAuthTokenGrantType") +
-                '&client_id=' + Vodafone.Configuration.getProperty("clientAppKey") +
-                '&client_secret=' + Vodafone.Configuration.getProperty("clientAppSecret") +
-                '&scope=' + Vodafone.Configuration.getProperty("apix.oAuthTokenScope"),
+            data: 'grant_type=' + Vodafone.Configuration.getConfiguration().apix.oAuthTokenGrantType +
+                '&client_id=' + Vodafone.Configuration.getConfiguration().clientAppKey +
+                '&client_secret=' + Vodafone.Configuration.getConfiguration().clientAppSecret +
+                '&scope=' + Vodafone.Configuration.getConfiguration().apix.oAuthTokenScope,
             success: function (data) {
                 console.debug('Received apix auth data ' + JSON.stringify(data));
                 appToken = data.token_type + data.access_token;
@@ -243,20 +231,20 @@ Vodafone.Apix = function () {
 
 Vodafone.Throttling = function () {
     var incrementCounter = function () {
-        var throttlingValue = parseInt(Vodafone.Storage.get(Vodafone.Configuration.getProperty("throttlingCookieName")), 10);
-        var throttlingExpiration = new Date(Vodafone.Storage.get(Vodafone.Configuration.getProperty("throttlingCookieExpirationName")));
+        var throttlingValue = parseInt(Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().throttlingCookieName), 10);
+        var throttlingExpiration = new Date(Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().throttlingCookieExpirationName));
 
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
-            if (throttlingValue >= Vodafone.Configuration.getProperty("requestsThrottlingLimit")) {
+            if (throttlingValue >= Vodafone.Configuration.getConfiguration().requestsThrottlingLimit) {
                 throw new Error('Throttling exceeded');
             } else {
-                Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieName"), throttlingValue + 1);
+                Vodafone.Storage.set(Vodafone.Configuration.getConfiguration().throttlingCookieName, throttlingValue + 1);
             }
         } else {
             var date = new Date();
-            date.setTime(date.getTime() + (Vodafone.Configuration.getProperty("requestsThrottlingPeriod") * 1000));
-            Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieName"), 1);
-            Vodafone.Storage.set(Vodafone.Configuration.getProperty("throttlingCookieExpirationName"), date);
+            date.setTime(date.getTime() + (Vodafone.Configuration.getConfiguration().requestsThrottlingPeriod * 1000));
+            Vodafone.Storage.set(Vodafone.Configuration.getConfiguration().throttlingCookieName, 1);
+            Vodafone.Storage.set(Vodafone.Configuration.getConfiguration().throttlingCookieExpirationName, date);
         }
     };
 
@@ -270,17 +258,17 @@ Vodafone.Trace = function () {
     var parser = new UAParser();
 
     var getSubjectId = function () {
-        if (Vodafone.Configuration.getProperty("cookiesAllowed")) {
-            if (!Vodafone.Storage.get(Vodafone.Configuration.getProperty("subjectIdCookieName"))) {
+        if (Vodafone.Configuration.getConfiguration().cookiesAllowed) {
+            if (!Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().subjectIdCookieName)) {
                 Vodafone.Storage.set(
-                    Vodafone.Configuration.getProperty("subjectIdCookieName"),
+                    Vodafone.Configuration.getConfiguration().subjectIdCookieName,
                         parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
                         parser.getBrowser().name + ' ' + parser.getBrowser().version + ' \\ ' +
                         fingerprint.get()
                 );
             }
 
-            return Vodafone.Storage.get(Vodafone.Configuration.getProperty("subjectIdCookieName"));
+            return Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().subjectIdCookieName);
         }
 
         return parser.getOS().name + ' ' + parser.getOS().version + ' \\ ' +
@@ -300,7 +288,7 @@ Vodafone.Trace = function () {
     var getHeaders = function () {
         return {
             'x-vf-trace-subject-region': getUserCountry(),
-            'x-vf-trace-source': Vodafone.Configuration.getProperty("sdkId") + '-' + Vodafone.Configuration.getProperty("clientAppKey"),
+            'x-vf-trace-source': Vodafone.Configuration.getConfiguration().sdkId + '-' + Vodafone.Configuration.getConfiguration().clientAppKey,
             'x-vf-trace-transaction-id': getTransactionId(),
             'x-vf-trace-subject-id': getSubjectId()
         };
@@ -335,7 +323,7 @@ Vodafone.Token = function () {
 
     var _callHap = function (successCallback, errorCallback) {
         _callResolver(
-            Vodafone.Configuration.getProperty("hapResolveAbsoluteUrl"),
+            Vodafone.Configuration.getConfiguration().hapResolveAbsoluteUrl,
             {},
             successCallback, errorCallback
         );
@@ -343,7 +331,7 @@ Vodafone.Token = function () {
 
     var _callApix = function (msisdn, successCallback, errorCallback) {
         _callResolver(
-            Vodafone.Configuration.getProperty("apixResolveAbsoluteUrl"),
+            Vodafone.Configuration.getConfiguration().apixResolveAbsoluteUrl,
             {
                 msisdn: msisdn,
                 market: _getMarket(msisdn)
@@ -356,7 +344,7 @@ Vodafone.Token = function () {
         console.info('Getting token from ' + url);
 
         $.ajax({
-            url: url + '?backendId=' + Vodafone.Configuration.getProperty("backendId"),
+            url: url + '?backendId=' + Vodafone.Configuration.getConfiguration().backendId,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
@@ -398,10 +386,10 @@ Vodafone.Token = function () {
     };
 
     var generateCode = function (confirmUrl, successCallback, errorCallback) {
-        Vodafone.Storage.set(Vodafone.Configuration.getProperty("tokenConfirmUrlKey"), confirmUrl);
+        Vodafone.Storage.set(Vodafone.Configuration.getConfiguration().tokenConfirmUrlKey, confirmUrl);
 
         $.ajax({
-            url: Vodafone.Configuration.getProperty("apixBaseUrl") + confirmUrl,
+            url: Vodafone.Configuration.getConfiguration().apixBaseUrl + confirmUrl,
             type: 'GET',
             headers: function () {
                 var headers = Vodafone.Trace.getHeaders();
@@ -429,9 +417,9 @@ Vodafone.Token = function () {
     };
 
     var confirmCode = function (code, successCallback, errorCallback) {
-        var confirmUrl = Vodafone.Storage.get(Vodafone.Configuration.getProperty("tokenConfirmUrlKey"));
+        var confirmUrl = Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().tokenConfirmUrlKey);
 
-        var absoluteConfirmationUrl = Vodafone.Configuration.getProperty("apixBaseUrl") + confirmUrl;
+        var absoluteConfirmationUrl = Vodafone.Configuration.getConfiguration().apixBaseUrl + confirmUrl;
         console.info("Sending confirmation code '" +code+ "' to " + absoluteConfirmationUrl);
         $.ajax({
             url: absoluteConfirmationUrl,
@@ -469,7 +457,7 @@ Vodafone.Token = function () {
     };
 
     var msisdnValid = function (msisdn) {
-        var re = new RegExp(Vodafone.Configuration.getProperty("phoneNumberRegex"));
+        var re = new RegExp(Vodafone.Configuration.getConfiguration().phoneNumberRegex);
 
         if (re.exec(msisdn)) {
             return true;
@@ -482,7 +470,7 @@ Vodafone.Token = function () {
         //FIXME: check the length before invoking substring
         var countryPrefix = msisdn.substring(0, 2);
         var toReturn;
-        $.each(Vodafone.Configuration.getProperty("availableMarkets"), function(countryCode, phonePrefix) {
+        $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function(countryCode, phonePrefix) {
             console.debug("Comparing " + countryPrefix + " with " + countryCode);
             if (phonePrefix == countryPrefix) {
                 console.info("Got " + countryCode + " for MSISDN " + msisdn);
