@@ -83,7 +83,7 @@ var DEV = {
         mangle: false,
         compress: {
             global_defs: {
-                DIRECT: true,
+                DIRECT: false,
                 ENV: ENVIRONMENT.ASLAU
             },
             dead_code: true,

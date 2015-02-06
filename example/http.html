@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="//code.jquery.com/qunit/qunit-1.17.1.css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
     <title>Seamless ID</title>
@@ -56,22 +57,24 @@
                     <label for="clientId" class="control-label col-xs-3">Client ID</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="clientId" value="l8d0ESc5vk5vHlOosrPaAxqYANKR2KSH"/>
+                        <!--<input type="text" class="form-control" id="clientId" value="l8d0ESc5vk5vHlOosrPaAxqYANKR2KSH"/>-->
+                        <input type="text" class="form-control" id="clientId" value="DQ8ky9WYYGz9QbXTHtloXQwTBaGbn464"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
                     <label for="clientSecret" class="control-label col-xs-3">Client Secret</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="clientSecret" value="oRwUAwm9R9CT5Xx1"/>
+                        <!--<input type="text" class="form-control" id="clientSecret" value="oRwUAwm9R9CT5Xx1"/>-->
+                        <input type="text" class="form-control" id="clientSecret" value="mdUUKJ8RlOUVwN0G"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
                     <label for="backendId" class="control-label col-xs-3">Backend ID</label>
 
                     <div class="col-xs-9">
-                        <input type="text" class="form-control" id="backendId"
-                               value="WCejf6WmXCw7fK07HzWMbTtJyYuEfQwc"/>
+                        <!--<input type="text" class="form-control" id="backendId" value="WCejf6WmXCw7fK07HzWMbTtJyYuEfQwc"/>-->
+                        <input type="text" class="form-control" id="backendId" value="dee663ce-7c8c-4457-b3a4-9c9c93e0c26a"/>
                     </div>
                 </div>
                 <div class="form-group form-group-sm">
@@ -233,5 +236,11 @@
         console.info(JSON.stringify(heResult, undefined, 2));
     };
 </script>
+
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<script src="//code.jquery.com/qunit/qunit-1.17.1.js"></script>
+<script src="tests.js"></script>
+
 </body>
 </html>
