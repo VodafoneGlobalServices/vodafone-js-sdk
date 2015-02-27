@@ -521,31 +521,27 @@ Vodafone.Storage = function () {
     };
 
     var _encrypt = function (plain) {
-        return plain;
-//
-//        console.debug("Encrypting '" + plain + "'");
-//        var encrypted = CryptoJS.AES.encrypt(plain, key,
-//            {
-//                iv: iv,
-//                mode: CryptoJS.mode.CBC,
-//                padding: CryptoJS.pad.Pkcs7
-//            }).toString();
-//        console.debug("Encrypted to '" +encrypted+ "'");
-//        return  encrypted;
+        console.debug("Encrypting '" + plain + "'");
+        var encrypted = CryptoJS.AES.encrypt(plain, key,
+            {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            }).toString();
+        console.debug("Encrypted to '" +encrypted+ "'");
+        return  encrypted;
     };
 
     var _decrypt = function (encrypted) {
-        return encrypted;
-//
-//        console.debug("Decrypting '" +encrypted+ "'");
-//        var plain = CryptoJS.AES.decrypt(encrypted, key,
-//            {
-//                iv: iv,
-//                mode: CryptoJS.mode.CBC,
-//                padding: CryptoJS.pad.Pkcs7
-//            }).toString(CryptoJS.enc.Utf8);
-//        console.debug("Decrypted to '" +plain+ "'");
-//        return  plain;
+        console.debug("Decrypting '" +encrypted+ "'");
+        var plain = CryptoJS.AES.decrypt(encrypted, key,
+            {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            }).toString(CryptoJS.enc.Utf8);
+        console.debug("Decrypted to '" +plain+ "'");
+        return  plain;
     };
 
     return {
