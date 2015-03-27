@@ -51,6 +51,7 @@ Vodafone = (function () {
     };
 
     return {
+        version: "1.0.1",
         init: init,
         getToken: getToken,
         confirmPin: confirmPin

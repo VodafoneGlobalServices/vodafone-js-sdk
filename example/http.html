@@ -11,7 +11,7 @@
     <script src="static/lib/ua-parser-js/src/ua-parser.min.js"></script>
     <script src="static/lib/persist-js/persist-min.js"></script>
     <script src="static/lib/crypto-js/rollups/aes.js"></script>
-    <script src="static/dist/vodafone.dev.js"></script>
+    <script src="static/dist/vodafone.pre.debug.js"></script>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
@@ -42,7 +42,7 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <h3>Seamless ID Javascript SDK testing page</h3>
+            <h3>Seamless ID Javascript SDK testing page <span id="sdkVersion"></span></h3>
             <hr/>
         </div>
     </div>
@@ -219,6 +219,7 @@
         $("#logLevelDebug").click(function() {
             filterOutput("debug");
         });
+        $("#sdkVersion").text("- SDK version " + Vodafone.version);
     });
 
     var successCallback = function (heResult) {
@@ -236,11 +237,6 @@
         console.info(JSON.stringify(heResult, undefined, 2));
     };
 </script>
-
-<div id="qunit"></div>
-<div id="qunit-fixture"></div>
-<script src="//code.jquery.com/qunit/qunit-1.17.1.js"></script>
-<script src="tests.js"></script>
 
 </body>
 </html>
