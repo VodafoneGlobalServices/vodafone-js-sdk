@@ -303,10 +303,11 @@ Vodafone.Trace = function () {
 Vodafone.Token = function () {
     var get = function (msisdn, successCallback, errorCallback) {
         if (msisdn) {
-            if (msisdnValid(msisdn)) {
-                _callApix(msisdn, successCallback, errorCallback);
+            var msisdnObj = new Vodafone.MSISDN(msisdn);
+            if (msisdnObj.isValid()) {
+                _callApix(msisdnObj, successCallback, errorCallback);
             } else {
-                errorCallback(new Vodafone.Result(Vodafone.Result.codes.INVALID_MSISDN, null, null));
+                errorCallback(new Vodafone.Result(Vodafone.Result.codes.INVALID_MSISDN, msisdnObj.getError(), null));
             }
         } else {
             var protocol = window.location.protocol;
@@ -330,12 +331,12 @@ Vodafone.Token = function () {
         );
     };
 
-    var _callApix = function (msisdn, successCallback, errorCallback) {
+    var _callApix = function (MSISDN, successCallback, errorCallback) {
         _callResolver(
             Vodafone.Configuration.getConfiguration().apixResolveAbsoluteUrl,
             {
-                msisdn: msisdn,
-                market: _getMarket(msisdn)
+                msisdn: MSISDN.getValue(),
+                market: MSISDN.getCountryCode()
             },
             successCallback, errorCallback
         );
@@ -457,34 +458,6 @@ Vodafone.Token = function () {
         });
     };
 
-    var msisdnValid = function (msisdn) {
-        var re = new RegExp(Vodafone.Configuration.getConfiguration().phoneNumberRegex);
-
-        if (re.exec(msisdn)) {
-            return true;
-        }
-
-        return false;
-    };
-
-    var _getMarket = function (msisdn) {
-        //FIXME: check the length before invoking substring
-        var countryPrefix = msisdn.substring(0, 2);
-        var toReturn;
-        $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function(countryCode, phonePrefix) {
-            console.debug("Comparing " + countryPrefix + " with " + countryCode);
-            if (phonePrefix == countryPrefix) {
-                console.info("Got " + countryCode + " for MSISDN " + msisdn);
-                toReturn = countryCode;
-                return false;
-            }
-        });
-        if (toReturn === undefined) {
-            console.error("Could not extract countryCode from MSISDN: " + msisdn);
-        }
-        return toReturn;
-    };
-
     return {
         get: get,
         confirm: confirmCode
@@ -549,6 +522,67 @@ Vodafone.Storage = function () {
         get: get
     };
 }();
+
+Vodafone.MSISDN = function(value) {
+    var shortValue = '';
+    var countryCode = '';
+    var phonePrefix = '';
+    var error = '';
+
+    var MSISDN = function(value) {
+        console.debug("Creating a new MSISDN for " + value);
+
+        if (value.indexOf('+') === 0 ) {
+            value = value.substring(1, value.length-1);
+        }
+        value = parseInt(value).toString();
+
+        $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function(cc, pp) {
+            if (value.indexOf(pp) === 0) {
+                console.info("Got " + cc + " for MSISDN " + value);
+                countryCode = cc;
+                phonePrefix = pp.toString();
+                return false; //break
+            }
+        });
+
+        var ppLength = phonePrefix.length;
+        if (ppLength > 0) {
+            shortValue = value.substring(ppLength, value.length);
+        }
+
+        console.debug("Created MSISDN. SV: " + shortValue + " CC: " + countryCode + " PP: " + phonePrefix);
+    }(value);
+
+    this.isValid = function() {
+        if (countryCode === '') {
+            error = "Country not supported";
+            return false;
+        }
+
+        var re = new RegExp(Vodafone.Configuration.getConfiguration().phoneNumberRegex);
+
+        if (re.exec(shortValue)) {
+            return true;
+        }
+
+        error = "Provided MSISDN has a wrong format";
+        return false;
+    };
+
+    this.getError = function() {
+        return error;
+    };
+
+    this.getCountryCode = function() {
+        return countryCode;
+    };
+
+    this.getValue = function() {
+        return phonePrefix + shortValue;
+    };
+};
+
 
 Vodafone.Result = function (code, message, data) {
     this.code = code;
