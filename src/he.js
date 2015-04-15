@@ -628,7 +628,7 @@ Vodafone.MSISDN = function (value) {
         if (value.indexOf('+') === 0) {
             value = value.substring(1, value.length - 1);
         }
-        value = parseInt(value).toString();
+        value = parseInt(value, 10).toString();
 
         $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function (cc, pp) {
             if (value.indexOf(pp) === 0) {
