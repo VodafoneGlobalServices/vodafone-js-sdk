@@ -328,8 +328,12 @@ Vodafone.Throttling = function () {
         var throttlingValue = parseInt(Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().throttlingCookieName), 10);
         var throttlingExpiration = new Date(Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().throttlingCookieExpirationName));
 
+        var requestsThrottlingLimit = Vodafone.Configuration.getConfiguration().requestsThrottlingLimit;
+        if (requestsThrottlingLimit === 0)
+            throw new Error('Throttling exceeded');
+
         if (throttlingValue && throttlingExpiration && new Date() < throttlingExpiration) {
-            if (throttlingValue >= Vodafone.Configuration.getConfiguration().requestsThrottlingLimit) {
+            if (throttlingValue >= requestsThrottlingLimit) {
                 throw new Error('Throttling exceeded');
             } else {
                 Vodafone.Storage.set(Vodafone.Configuration.getConfiguration().throttlingCookieName, throttlingValue + 1);
