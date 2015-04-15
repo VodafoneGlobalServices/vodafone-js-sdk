@@ -9,7 +9,7 @@ Vodafone = (function () {
         }
 
         try {
-            Vodafone.Configuration.init(mOptions, function(result) {
+            Vodafone.Configuration.init(mOptions, function (result) {
                 if (result.code === Vodafone.Result.codes.INITIALIZED) {
                     Vodafone.Apix.init(mInitCallback);
                 }
@@ -51,14 +51,14 @@ Vodafone = (function () {
     };
 
     return {
-        version: "1.0.1",
+        version: "1.0.2",
         init: init,
         getToken: getToken,
         confirmPin: confirmPin
     };
 })();
 
-Vodafone.Configuration = function() {
+Vodafone.Configuration = function () {
     var initialized = false;
     var configuration = {};
 
@@ -81,11 +81,11 @@ Vodafone.Configuration = function() {
         }
     };
 
-    var getConfiguration = function() {
+    var getConfiguration = function () {
         return configuration;
     };
 
-    var isInitialized = function() {
+    var isInitialized = function () {
         return initialized;
     };
 
@@ -110,7 +110,7 @@ Vodafone.Configuration = function() {
         }
         if (ENV == 'PROD') {
             console.info("Using environment PROD");
-            configuration.configurationUrl = "https://preprod.appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json";
+            configuration.configurationUrl = "https://appconfig.shared.sp.vodafone.com/seamless-id/v1/sdk-config-js/config.json";
         }
     };
 
@@ -119,40 +119,132 @@ Vodafone.Configuration = function() {
             configuration[key] = _options[key];
         }
 
+        configurationJson = {};
+
         $.ajax({
             url: configuration.configurationUrl,
             type: 'GET',
             dataType: 'json',
 
             success: function (data) {
+                configurationJson = data;
                 console.debug('Received SDK configuration');
-                console.debug(JSON.stringify(data, undefined, 2));
-                for (var key in data) {
-                    if (configuration[key] === undefined) {
-                        configuration[key] = data[key];
-                    }
+                console.debug(JSON.stringify(configurationJson, undefined, 2));
+
+                _mergeSdkConfigAndInvokeCallback(configurationJson, mInitCallback);
+            },
+
+            error: function (request, status, error) {
+                if (ENV == 'ASLAU' || ENV == 'DEV') {
+                    configurationJson = {
+                        "hap": {
+                            "protocol": "http",
+                            "host": "hap-pre.sp.vodafone.com",
+                            "hostAndroid": "hap-pre.sp.vodafone.com",
+                            "hostiOS": "ihap-pre.sp.vodafone.com"
+                        },
+                        "apix": {
+                            "protocol": "https",
+                            "host": "apisit.developer.vodafone.com",
+                            "oAuthTokenPath": "/2/oauth/access-token",
+                            "oAuthTokenScope": "seamless_id_resolve",
+                            "oAuthTokenGrantType": "client_credentials"
+                        },
+                        "basePath": "/seamless-id/users/tokens",
+                        "defaultHttpConnectionTimeout": 60,
+                        "requestsThrottlingLimit": 10,
+                        "requestsThrottlingPeriod": 60,
+                        "availableMarkets": {"PT": 351, "IT": 39, "DE": 49, "ES": 34, "IE": 353, "NL": 31, "GB": 44, "RO": 40, "HU": 36, "GR": 30, "MT": 356, "AL": 355, "CZ": 420, "ZA": 27},
+                        "phoneNumberRegex": "^[0-9]{7,13}$",
+                        "availableMccMnc": ["26801", "22210", "26202", "21401", "27201", "20404", "23415", "22601", "21670", "20205", "27801", "27602", "23003", "65501"],
+                        "browserIdCookieExpirationDays": 3650,
+                        "browserIdCookieName": "browserId",
+                        "throttlingCookieExpirationName": "throttlingExpiration",
+                        "throttlingCookieName": "throttlingValue"
+                    };
+                }
+                if (ENV == 'PRE_PROD') {
+                    configurationJson = {
+                        "hap": {
+                            "protocol": "http",
+                            "host": "hap-pre.sp.vodafone.com",
+                            "hostAndroid": "hap-pre.sp.vodafone.com",
+                            "hostiOS": "ihap-pre.sp.vodafone.com"
+                        },
+                        "apix": {
+                            "protocol": "https",
+                            "host": "apisit.developer.vodafone.com",
+                            "oAuthTokenPath": "/2/oauth/access-token",
+                            "oAuthTokenScope": "seamless_id_resolve",
+                            "oAuthTokenGrantType": "client_credentials"
+                        },
+                        "basePath": "/seamless-id/users/tokens",
+                        "defaultHttpConnectionTimeout": 60,
+                        "requestsThrottlingLimit": 10,
+                        "requestsThrottlingPeriod": 60,
+                        "availableMarkets": {"PT": 351, "IT": 39, "DE": 49, "ES": 34, "IE": 353, "NL": 31, "UK": 44, "RO": 40, "GR": 30},
+                        "phoneNumberRegex": "^[0-9]{7,12}$",
+                        "availableMccMnc": ["26801", "22210", "26202", "21401", "27201", "20404", "23415", "22601", "20205"],
+                        "browserIdCookieExpirationDays": 3650,
+                        "browserIdCookieName": "browserId",
+                        "throttlingCookieExpirationName": "throttlingExpiration",
+                        "throttlingCookieName": "throttlingValue"
+                    };
+                }
+                if (ENV == 'PROD') {
+                    configurationJson = {
+                        "hap": {
+                            "protocol": "http",
+                            "host": "hap.sp.vodafone.com",
+                            "hostAndroid": "hap.sp.vodafone.com",
+                            "hostiOS": "ihap.sp.vodafone.com"
+                        },
+                        "apix": {
+                            "protocol": "https",
+                            "host": "api.developer.vodafone.com",
+                            "oAuthTokenPath": "/2/oauth/access-token",
+                            "oAuthTokenScope": "seamless_id_resolve",
+                            "oAuthTokenGrantType": "client_credentials"
+                        },
+                        "basePath": "/seamless-id/users/tokens",
+                        "defaultHttpConnectionTimeout": 60,
+                        "requestsThrottlingLimit": 10,
+                        "requestsThrottlingPeriod": 60,
+                        "availableMarkets": {"PT": 351, "IT": 39, "DE": 49, "ES": 34, "IE": 353, "NL": 31, "UK": 44, "RO": 40, "GR": 30},
+                        "phoneNumberRegex": "^[0-9]{7,12}$",
+                        "availableMccMnc": ["26801", "22210", "26202", "21401", "27201", "20404", "23415", "22601", "20205"],
+                        "browserIdCookieExpirationDays": 3650,
+                        "browserIdCookieName": "browserId",
+                        "throttlingCookieExpirationName": "throttlingExpiration",
+                        "throttlingCookieName": "throttlingValue"
+                    };
                 }
 
-                _calculateCompoundProperties();
+                console.debug('Error while retrieving configuration from the server. Using default settings.');
+                console.debug(JSON.stringify(configurationJson, undefined, 2));
 
-                initialized = true;
-                console.info('Configuration initialisation done');
-                console.debug(JSON.stringify(configuration, undefined, 2));
-
-                mInitCallback(new Vodafone.Result(Vodafone.Result.codes.INITIALIZED, "SDK configuration initialized", data));
-            },
-            error: function (request, status, error) {
-                var errorData = {
-                    configUrl: configuration.configurationUrl,
-                    status: status,
-                    error: error
-                };
-                mInitCallback(new Vodafone.Result(Vodafone.Result.codes.ERROR, "Error while retrieving configuration", errorData));
+                _mergeSdkConfigAndInvokeCallback(configurationJson, mInitCallback);
             }
         });
     };
 
-    var _calculateCompoundProperties = function() {
+    var _mergeSdkConfigAndInvokeCallback = function (configurationJson, mInitCallback) {
+        for (var key in configurationJson) {
+            if (configuration[key] === undefined) {
+                configuration[key] = configurationJson[key];
+            }
+        }
+
+        _calculateCompoundProperties();
+
+        initialized = true;
+        console.info('Configuration initialisation done');
+        console.debug(JSON.stringify(configurationJson, undefined, 2));
+
+        mInitCallback(new Vodafone.Result(Vodafone.Result.codes.INITIALIZED, "SDK configuration initialized", configurationJson));
+    };
+
+    var _calculateCompoundProperties = function () {
         var iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
         var android = ( navigator.userAgent.match(/(android|Android)/g) ? true : false );
 
@@ -184,7 +276,7 @@ Vodafone.Apix = function () {
     var appToken;
     var initialized = false;
 
-    var init = function(mInitCallback) {
+    var init = function (mInitCallback) {
         console.debug("oAuth token NOT set. Retrieving it from APIX");
         var apixAuthUrl = Vodafone.Configuration.getConfiguration().apixAuthAbsoluteUrl;
         $.ajax({
@@ -196,7 +288,7 @@ Vodafone.Apix = function () {
                 '&scope=' + Vodafone.Configuration.getConfiguration().apix.oAuthTokenScope,
             success: function (data) {
                 console.debug('Received apix auth data ' + JSON.stringify(data));
-                appToken = data.token_type +' '+ data.access_token;
+                appToken = data.token_type + ' ' + data.access_token;
                 initialized = true;
                 console.info('Set the apix token to ' + appToken);
                 mInitCallback();
@@ -220,7 +312,7 @@ Vodafone.Apix = function () {
         return appToken;
     };
 
-    var isInitialized = function() {
+    var isInitialized = function () {
         return initialized;
     };
 
@@ -423,7 +515,7 @@ Vodafone.Token = function () {
         var confirmUrl = Vodafone.Storage.get(Vodafone.Configuration.getConfiguration().tokenConfirmUrlKey);
 
         var absoluteConfirmationUrl = Vodafone.Configuration.getConfiguration().apixBaseUrl + confirmUrl;
-        console.info("Sending confirmation code '" +code+ "' to " + absoluteConfirmationUrl);
+        console.info("Sending confirmation code '" + code + "' to " + absoluteConfirmationUrl);
         $.ajax({
             url: absoluteConfirmationUrl,
             type: 'POST',
@@ -475,7 +567,7 @@ Vodafone.Storage = function () {
         if (name && value) {
             var encryptedValue = _encrypt(value.toString());
 
-            console.debug("Storing '" +name+ "', '" +value+ "', '" +encryptedValue+ "'");
+            console.debug("Storing '" + name + "', '" + value + "', '" + encryptedValue + "'");
             store.set(name, encryptedValue);
         } else {
             console.warning("Did not set anything for " + name + " and " + value);
@@ -490,7 +582,7 @@ Vodafone.Storage = function () {
             value = _decrypt(encryptedValue);
         }
 
-        console.debug("Retrieving '" +name+ "', '" +value+ "', '" +encryptedValue+ "'");
+        console.debug("Retrieving '" + name + "', '" + value + "', '" + encryptedValue + "'");
         return value;
     };
 
@@ -502,19 +594,19 @@ Vodafone.Storage = function () {
                 mode: CryptoJS.mode.CBC,
                 padding: CryptoJS.pad.Pkcs7
             }).toString();
-        console.debug("Encrypted to '" +encrypted+ "'");
+        console.debug("Encrypted to '" + encrypted + "'");
         return  encrypted;
     };
 
     var _decrypt = function (encrypted) {
-        console.debug("Decrypting '" +encrypted+ "'");
+        console.debug("Decrypting '" + encrypted + "'");
         var plain = CryptoJS.AES.decrypt(encrypted, key,
             {
                 iv: iv,
                 mode: CryptoJS.mode.CBC,
                 padding: CryptoJS.pad.Pkcs7
             }).toString(CryptoJS.enc.Utf8);
-        console.debug("Decrypted to '" +plain+ "'");
+        console.debug("Decrypted to '" + plain + "'");
         return  plain;
     };
 
@@ -524,21 +616,21 @@ Vodafone.Storage = function () {
     };
 }();
 
-Vodafone.MSISDN = function(value) {
+Vodafone.MSISDN = function (value) {
     var shortValue = '';
     var countryCode = '';
     var phonePrefix = '';
     var error = '';
 
-    var MSISDN = function(value) {
+    var MSISDN = function (value) {
         console.debug("Creating a new MSISDN for " + value);
 
-        if (value.indexOf('+') === 0 ) {
-            value = value.substring(1, value.length-1);
+        if (value.indexOf('+') === 0) {
+            value = value.substring(1, value.length - 1);
         }
         value = parseInt(value).toString();
 
-        $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function(cc, pp) {
+        $.each(Vodafone.Configuration.getConfiguration().availableMarkets, function (cc, pp) {
             if (value.indexOf(pp) === 0) {
                 console.info("Got " + cc + " for MSISDN " + value);
                 countryCode = cc;
@@ -555,7 +647,7 @@ Vodafone.MSISDN = function(value) {
         console.debug("Created MSISDN. SV: " + shortValue + " CC: " + countryCode + " PP: " + phonePrefix);
     }(value);
 
-    this.isValid = function() {
+    this.isValid = function () {
         if (countryCode === '') {
             error = "Country not supported";
             return false;
@@ -571,15 +663,15 @@ Vodafone.MSISDN = function(value) {
         return false;
     };
 
-    this.getError = function() {
+    this.getError = function () {
         return error;
     };
 
-    this.getCountryCode = function() {
+    this.getCountryCode = function () {
         return countryCode;
     };
 
-    this.getValue = function() {
+    this.getValue = function () {
         return phonePrefix + shortValue;
     };
 };
